@@ -1,0 +1,1250 @@
+<!doctype html>
+<html lang="uk" data-lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>К80-50-200 · Flowbit 3D</title>
+<meta name="description" content="3D-модель насосного агрегату К80-50-200 по деталях: точки датчиків Flowbit, типові несправності, як їх читати у вібрації і як ремонтувати крок за кроком.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%23071833' stroke='%2356c8ff' stroke-width='2'/%3E%3Cpath d='M5 16h4l2-6 3 12 3-15 3 15 2-6h5' fill='none' stroke='%23eaf2ff' stroke-width='2' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Unbounded:wght@500;600;700&display=swap">
+<style>
+/* Same drawing-paper look as the Flowbit landing: navy blueprint grid, line accents, mono labels.
+   The 3D stage stays pinned on wide screens while the side panel (parts, sensors, faults, repair) scrolls. */
+:root{
+  --bg:#071833; --bg2:#0b2246; --panel:#0c2549; --panel2:#10305c;
+  --line:#7fb2ff; --line-soft:rgba(127,178,255,.32); --grid:rgba(110,160,255,.055); --grid2:rgba(110,160,255,.11);
+  --ink:#eaf2ff; --muted:#9cb3d8; --accent:#56c8ff; --accent-ink:#04203f;
+  --ok:#3ddc97; --warn:#ffb547; --crit:#ff6b6b; --hot:#ff9a3d;
+  --f-display:"Unbounded","Golos Text",system-ui,sans-serif;
+  --f-body:"Golos Text",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
+  color-scheme:dark;
+}
+:root:not([data-lang="en"]) body [lang="en"],:root[data-lang="en"] body [lang="uk"]{display:none!important}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;color:var(--ink);font:16px/1.6 var(--f-body);background-color:var(--bg);
+  background-image:linear-gradient(var(--grid2) 1px,transparent 1px),linear-gradient(90deg,var(--grid2) 1px,transparent 1px),
+    linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:120px 120px,120px 120px,24px 24px,24px 24px;background-position:-1px -1px}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:60;background:var(--bg)}
+.wrap{max-width:1360px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+a{color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:4px}
+button{font:inherit;color:inherit}
+.mono{font-family:var(--f-mono)}
+.eyebrow{display:inline-flex;align-items:center;gap:10px;font:500 12.5px/1.4 var(--f-mono);letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+.eyebrow::before{content:"";width:22px;height:1px;background:var(--accent)}
+h1{font:700 clamp(28px,3.6vw,46px)/1.08 var(--f-display);letter-spacing:-.01em;margin:12px 0 14px;text-wrap:balance}
+h2{font:600 clamp(23px,3vw,34px)/1.15 var(--f-display);margin:10px 0 14px;text-wrap:balance}
+h3{font:600 18px/1.3 var(--f-body);margin:0 0 8px}
+p{margin:0 0 12px;max-width:70ch}
+.lead{font-size:clamp(16px,1.5vw,19px);color:var(--muted);max-width:64ch}
+.small{font-size:13.5px;color:var(--muted)}
+section{padding-block:clamp(48px,7vw,88px);scroll-margin-top:64px;border-top:1px solid var(--line-soft)}
+.chip{display:inline-flex;align-items:center;gap:6px;font:500 12px/1.5 var(--f-mono);padding:2px 10px;border-radius:99px;border:1px solid currentColor;white-space:nowrap}
+.chip.ok{color:var(--ok)} .chip.warn{color:var(--warn)} .chip.crit{color:var(--crit)} .chip.info{color:var(--accent)} .chip.mut{color:var(--muted)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:11px 16px;border-radius:11px;font:600 15px/1 var(--f-body);text-decoration:none;cursor:pointer;border:1px solid var(--line-soft);background:rgba(127,178,255,.06);color:var(--ink);transition:background .15s,border-color .15s}
+.btn:hover{border-color:var(--accent)}
+.btn-p{background:var(--accent);color:var(--accent-ink);border-color:transparent}
+.btn-p:hover{background:#7fd6ff}
+.btn[disabled]{opacity:.4;cursor:default}
+
+/* header */
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:50;background:rgba(7,24,51,.86);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid var(--line-soft)}
+.top .wrap{display:flex;align-items:center;gap:16px;height:60px}
+.logo{display:flex;align-items:center;gap:10px;color:var(--ink);text-decoration:none;font:700 19px/1 var(--f-display)}
+.logo svg{width:30px;height:30px}
+nav.links{display:flex;gap:2px;margin-left:auto}
+nav.links a{color:var(--muted);text-decoration:none;font-size:15px;padding:8px 9px;border-radius:8px}
+nav.links a:hover,nav.links a[aria-current]{color:var(--ink);background:rgba(127,178,255,.08)}
+.lang{display:inline-flex;border:1px solid var(--line-soft);border-radius:9px;overflow:hidden;flex:none}
+.lang button{background:none;border:0;color:var(--muted);font:600 12.5px/1 var(--f-mono);padding:9px 10px;cursor:pointer;letter-spacing:.04em}
+.lang button[aria-pressed="true"]{background:rgba(86,200,255,.18);color:var(--ink)}
+details.menu{display:none;position:relative}
+details.menu summary{list-style:none;cursor:pointer;width:42px;height:42px;display:grid;place-items:center;border:1px solid var(--line-soft);border-radius:10px}
+details.menu summary::-webkit-details-marker{display:none}
+details.menu .drop{position:absolute;right:0;top:50px;background:var(--panel);border:1px solid var(--line-soft);border-radius:12px;padding:8px;display:grid;min-width:220px;box-shadow:0 18px 40px rgba(0,0,0,.4)}
+details.menu .drop a{color:var(--ink);text-decoration:none;padding:10px 12px;border-radius:8px}
+details.menu .drop a:hover{background:rgba(127,178,255,.1)}
+@media (max-width:900px){nav.links{display:none} details.menu{display:block} .lang{margin-left:auto}}
+
+/* hero */
+.hero{padding-block:clamp(28px,4vw,48px) clamp(22px,3vw,34px);border-top:0}
+.hero-grid{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:24px;align-items:end}
+@media (max-width:900px){.hero-grid{grid-template-columns:minmax(0,1fr)}}
+.specs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border:1px solid var(--line-soft);border-radius:12px;overflow:hidden;background:rgba(11,34,70,.55)}
+.specs div{padding:10px 14px;border-left:1px solid var(--line-soft);border-top:1px solid var(--line-soft);margin:-1px 0 0 -1px}
+.specs b{display:block;font:600 17px/1.25 var(--f-display);font-variant-numeric:tabular-nums}
+.specs span{font-size:12.5px;color:var(--muted)}
+
+/* app */
+.app{padding-block:0 clamp(40px,6vw,72px);border-top:0}
+.app-grid{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(330px,1fr);gap:18px;align-items:start}
+.stage{position:sticky;top:72px;height:calc(100vh - 92px);height:calc(100dvh - 92px);min-height:440px;max-height:860px;border:1px solid var(--line-soft);border-radius:14px;overflow:hidden;
+  background:radial-gradient(120% 90% at 50% 35%,#123462 0%,#0a2147 55%,#071631 100%);touch-action:none}
+.stage::before,.stage::after{content:"";position:absolute;width:18px;height:18px;border-color:var(--accent);border-style:solid;z-index:3;pointer-events:none}
+.stage::before{left:-1px;top:-1px;border-width:2px 0 0 2px;border-radius:14px 0 0 0}
+.stage::after{right:-1px;bottom:-1px;border-width:0 2px 2px 0;border-radius:0 0 14px 0}
+@media (max-width:980px){.app-grid{grid-template-columns:minmax(0,1fr)} .stage{position:relative;top:auto;height:62vh;height:62svh;min-height:360px}}
+#c{display:block;width:100%;height:100%;cursor:grab}
+#c:active{cursor:grabbing}
+.poster{position:absolute;inset:8% 6% 22%;width:88%;height:70%;object-fit:contain;opacity:.9;transition:opacity .6s;pointer-events:none}
+.poster.gone{opacity:0}
+.loading{position:absolute;left:50%;top:12px;transform:translateX(-50%);font:500 12px/1.4 var(--f-mono);color:var(--muted);background:rgba(7,24,51,.8);border:1px solid var(--line-soft);border-radius:99px;padding:5px 12px;z-index:4}
+.loading.err{color:var(--crit);border-color:var(--crit);max-width:90%;text-align:center}
+.hud{position:absolute;left:12px;top:12px;z-index:4;font:500 11.5px/1.5 var(--f-mono);color:var(--muted);letter-spacing:.06em;text-transform:uppercase;pointer-events:none}
+.hud b{color:var(--ink);font-weight:600}
+.tip{position:absolute;z-index:5;pointer-events:none;background:rgba(7,24,51,.92);border:1px solid var(--line-soft);border-radius:8px;padding:4px 9px;font-size:13px;white-space:nowrap;transform:translate(12px,12px);display:none}
+.labels{position:absolute;inset:0;pointer-events:none;z-index:4;overflow:hidden}
+.lbl{position:absolute;left:0;top:0;pointer-events:auto;cursor:pointer;display:flex;align-items:center;gap:6px;transform:translate(-50%,-100%);
+  font:600 11px/1 var(--f-mono);letter-spacing:.04em;color:var(--accent-ink);background:var(--accent);border-radius:99px;padding:4px 8px;white-space:nowrap;border:0;box-shadow:0 4px 14px rgba(0,0,0,.35)}
+.lbl::after{content:"";position:absolute;left:50%;bottom:-5px;width:2px;height:6px;background:var(--accent);transform:translateX(-50%)}
+.lbl.p2{background:#9fd8ff}
+.lbl.alert{background:var(--crit);color:#fff;animation:pulse 1.2s infinite}
+.lbl.alert::after{background:var(--crit)}
+@keyframes pulse{50%{box-shadow:0 0 0 7px rgba(255,107,107,.25)}}
+.toolbar{position:absolute;left:10px;right:10px;bottom:10px;z-index:4;display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:8px;border:1px solid var(--line-soft);border-radius:12px;background:rgba(7,24,51,.82);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.toolbar .ex{display:flex;align-items:center;gap:8px;flex:1 1 220px;min-width:180px;font:500 12px/1 var(--f-mono);color:var(--muted)}
+.toolbar input[type=range]{flex:1;accent-color:var(--accent);min-width:80px}
+.tb{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line-soft);background:rgba(127,178,255,.06);border-radius:9px;padding:7px 10px;font:500 13px/1 var(--f-body);cursor:pointer;color:var(--ink)}
+.tb svg{width:16px;height:16px}
+.tb[aria-pressed="true"]{background:rgba(86,200,255,.2);border-color:var(--accent)}
+.tb:hover{border-color:var(--accent)}
+@media (max-width:560px){.tb .tx{display:none} .tb{padding:8px 9px}}
+.stepbar{position:absolute;left:10px;right:10px;top:10px;z-index:5;display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--accent);border-radius:12px;background:rgba(7,24,51,.9);backdrop-filter:blur(8px)}
+.stepbar[hidden]{display:none}
+.stepbar .sb-t{flex:1;min-width:0;font-size:14px;line-height:1.3}
+.stepbar .sb-t small{display:block;font:500 11px/1.4 var(--f-mono);color:var(--accent);letter-spacing:.06em;text-transform:uppercase}
+.stepbar .sb-t span{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.stepbar .tb{padding:8px 10px}
+
+.side{min-width:0}
+.tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;padding:4px;border:1px solid var(--line-soft);border-radius:12px;background:rgba(11,34,70,.7);position:sticky;top:72px;z-index:6}
+@media (max-width:980px){.tabs{top:62px}}
+.tabs button{background:none;border:0;border-radius:9px;padding:10px 4px;font:600 13.5px/1.2 var(--f-body);color:var(--muted);cursor:pointer}
+.tabs button[aria-selected="true"]{background:rgba(86,200,255,.18);color:var(--ink)}
+@media (max-width:430px){.tabs button{font-size:12px;padding:10px 2px;letter-spacing:-.01em}}
+.tabpanel{padding-top:14px}
+.tabpanel[hidden]{display:none}
+.card{background:rgba(11,34,70,.72);border:1px solid var(--line-soft);border-radius:14px;padding:16px;margin-bottom:12px}
+.card.sel{border-color:var(--accent)}
+.card h3{display:flex;align-items:flex-start;gap:10px;justify-content:space-between}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:14px;margin:10px 0 0}
+.kv dt{color:var(--muted);font:500 12px/1.9 var(--f-mono);text-transform:uppercase;letter-spacing:.05em}
+.kv dd{margin:0}
+.grp{margin-bottom:14px}
+.grp h4{margin:0 0 6px;font:500 12px/1.4 var(--f-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--accent)}
+.plist{display:flex;flex-wrap:wrap;gap:6px}
+.pbtn{border:1px solid var(--line-soft);background:rgba(127,178,255,.05);border-radius:8px;padding:6px 9px;font:500 13.5px/1.25 var(--f-body);color:var(--ink);cursor:pointer;text-align:left}
+.pbtn:hover{border-color:var(--accent)}
+.pbtn[aria-pressed="true"]{background:rgba(86,200,255,.2);border-color:var(--accent)}
+.sens{display:grid;gap:10px}
+.sens .card{cursor:pointer;margin:0}
+.sens .card:hover{border-color:var(--accent)}
+.badge{display:inline-grid;place-items:center;min-width:46px;height:24px;padding:0 8px;border-radius:99px;background:var(--accent);color:var(--accent-ink);font:700 12px/1 var(--f-mono)}
+.badge.p2{background:#9fd8ff}
+ul.tight{margin:6px 0 0;padding-left:18px}
+ul.tight li{margin:3px 0}
+details.fault{background:rgba(11,34,70,.72);border:1px solid var(--line-soft);border-radius:14px;margin-bottom:10px}
+details.fault[open]{border-color:var(--accent)}
+details.fault summary{list-style:none;cursor:pointer;padding:13px 14px;display:grid;grid-template-columns:auto 1fr;gap:4px 10px;align-items:center}
+details.fault summary::-webkit-details-marker{display:none}
+.sev{width:10px;height:10px;border-radius:50%;background:var(--warn);grid-row:span 2}
+.sev.crit{background:var(--crit)}
+.fault .ttl{font-weight:600;font-size:15.5px;line-height:1.3}
+.fault .meta{display:flex;flex-wrap:wrap;gap:6px}
+.fault .body{padding:0 14px 14px}
+.fault h5{margin:12px 0 4px;font:500 11.5px/1.4 var(--f-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--accent)}
+.fault p{font-size:14.5px;margin:0 0 6px}
+svg.spec{display:block;width:100%;height:auto;margin-top:6px;background:rgba(7,24,51,.6);border:1px solid var(--line-soft);border-radius:10px}
+.spec text{font-family:var(--f-mono)}
+.plist2{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.proc-list{display:grid;gap:10px}
+.proc-list button{all:unset;cursor:pointer;display:block;background:rgba(11,34,70,.72);border:1px solid var(--line-soft);border-radius:14px;padding:14px 16px}
+.proc-list button:hover,.proc-list button:focus-visible{border-color:var(--accent)}
+.proc-list b{display:block;font-size:16px}
+.proc-list span{font-size:13.5px;color:var(--muted)}
+.dots{display:flex;flex-wrap:wrap;gap:5px;margin:8px 0 12px}
+.dots button{width:26px;height:26px;border-radius:8px;border:1px solid var(--line-soft);background:none;color:var(--muted);font:600 11.5px/1 var(--f-mono);cursor:pointer;padding:0}
+.dots button.done{background:rgba(61,220,151,.14);color:var(--ok);border-color:rgba(61,220,151,.5)}
+.dots button[aria-current="step"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.step-d{font-size:15px}
+.warnbox{border:1px solid rgba(255,181,71,.6);background:rgba(255,181,71,.08);border-radius:10px;padding:9px 12px;font-size:14px;margin:10px 0}
+.navrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.empty{color:var(--muted);font-size:14px}
+
+/* tables */
+.tw{overflow-x:auto;border:1px solid var(--line-soft);border-radius:12px;background:rgba(11,34,70,.6)}
+table{width:100%;border-collapse:collapse;font-size:14.5px;min-width:560px}
+th,td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--line-soft);vertical-align:top}
+th{font:500 12px/1.4 var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);background:rgba(127,178,255,.05)}
+tr:last-child td{border-bottom:0}
+td.num{font-family:var(--f-mono);white-space:nowrap}
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}
+@media (max-width:980px){.two{grid-template-columns:minmax(0,1fr)}}
+.src{display:grid;gap:8px;padding:0;margin:0;list-style:none}
+.src li{background:rgba(11,34,70,.6);border:1px solid var(--line-soft);border-radius:10px;padding:10px 14px;font-size:14.5px}
+footer{border-top:1px solid var(--line-soft);padding:22px 0 calc(22px + env(safe-area-inset-bottom,0px));color:var(--muted);font:500 12px/1.6 var(--f-mono)}
+footer .wrap{display:flex;flex-wrap:wrap;gap:10px 28px;justify-content:space-between}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto} .lbl.alert{animation:none} .poster{transition:none}}
+</style>
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}
+</script>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <a class="logo" href="index.html" aria-label="Flowbit">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="14" fill="none" stroke="#56c8ff" stroke-width="2"/><path d="M5 16 h4 l2-6 3 12 3-15 3 15 2-6 h5" fill="none" stroke="#eaf2ff" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/></svg>
+      Flowbit
+    </a>
+    <nav class="links" data-aria-uk="Розділи" data-aria-en="Sections" aria-label="Розділи">
+      <a href="index.html"><span lang="uk">Головна</span><span lang="en">Home</span></a>
+      <a href="#viewer" aria-current="page"><span lang="uk">3D-модель</span><span lang="en">3D model</span></a>
+      <a href="#viewer" data-tab-link="faults"><span lang="uk">Несправності</span><span lang="en">Faults</span></a>
+      <a href="#viewer" data-tab-link="proc"><span lang="uk">Ремонт</span><span lang="en">Repair</span></a>
+      <a href="#normy"><span lang="uk">Норми й частоти</span><span lang="en">Limits &amp; frequencies</span></a>
+      <a href="#dzherela"><span lang="uk">Джерела</span><span lang="en">Sources</span></a>
+    </nav>
+    <div class="lang" role="group" data-aria-uk="Мова" data-aria-en="Language" aria-label="Мова">
+      <button type="button" data-lang-btn="uk" aria-pressed="true" title="Українська">UA</button><button type="button" data-lang-btn="en" aria-pressed="false" title="English">EN</button>
+    </div>
+    <details class="menu"><summary data-aria-uk="Меню" data-aria-en="Menu" aria-label="Меню"><svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M3 5h14M3 10h14M3 15h14" stroke="#eaf2ff" stroke-width="2" stroke-linecap="round"/></svg></summary>
+      <div class="drop">
+        <a href="index.html"><span lang="uk">Головна</span><span lang="en">Home</span></a>
+        <a href="#viewer"><span lang="uk">3D-модель</span><span lang="en">3D model</span></a>
+        <a href="#viewer" data-tab-link="faults"><span lang="uk">Несправності</span><span lang="en">Faults</span></a>
+        <a href="#viewer" data-tab-link="proc"><span lang="uk">Ремонт</span><span lang="en">Repair</span></a>
+        <a href="#normy"><span lang="uk">Норми й частоти</span><span lang="en">Limits &amp; frequencies</span></a>
+        <a href="#dzherela"><span lang="uk">Джерела</span><span lang="en">Sources</span></a>
+      </div>
+    </details>
+  </div>
+</header>
+
+<main>
+<section class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <span class="eyebrow"><span lang="uk">Демо-додаток Flowbit · машина 1</span><span lang="en">Flowbit demo app · machine 1</span></span>
+      <h1><span lang="uk">Насосний агрегат К80-50-200</span><span lang="en">K80-50-200 pump unit</span></h1>
+      <p class="lead"><span lang="uk">Консольний відцентровий насос із двигуном АИР160S2 на рамі, змодельований по деталях за кресленнями виробників. Розберіть його, подивіться, куди ставити датчики, які несправності вони бачать і як їх усувати крок за кроком.</span><span lang="en">An end-suction centrifugal pump with an AIR160S2 motor on a base frame, modelled part by part from the manufacturers' drawings. Take it apart, see where the sensors go, which faults they catch and how to fix them step by step.</span></p>
+      <p class="small"><span lang="uk">Поки без живого підключення: датчики показані на своїх місцях, а сигнатури несправностей — як еталон для аналітики.</span><span lang="en">No live connection yet: sensors are shown in their places, and fault signatures serve as references for the analytics.</span></p>
+    </div>
+    <div class="specs">
+      <div><b>50 <span lang="uk">м³/год</span><span lang="en">m³/h</span></b><span lang="uk">подача</span><span lang="en">flow</span></div>
+      <div><b>50 <span lang="uk">м</span><span lang="en">m</span></b><span lang="uk">напір</span><span lang="en">head</span></div>
+      <div><b>15 <span lang="uk">кВт</span><span lang="en">kW</span></b><span lang="uk">двигун</span><span lang="en">motor</span></div>
+      <div><b>2900</b><span lang="uk">об/хв · 48,3 Гц</span><span lang="en">rpm · 48.3 Hz</span></div>
+      <div><b>54</b><span lang="uk">деталі в моделі</span><span lang="en">parts in the model</span></div>
+      <div><b>206 <span lang="uk">кг</span><span lang="en">kg</span></b><span lang="uk">агрегат на рамі</span><span lang="en">unit on frame</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="app" id="viewer">
+  <div class="wrap app-grid">
+    <div class="stage" id="stage">
+      <img class="poster" id="poster" src="img/k80-unit.webp" alt="" aria-hidden="true">
+      <canvas id="c" role="img" data-aria-uk="3D-модель насосного агрегату К80-50-200" data-aria-en="3D model of the K80-50-200 pump unit" aria-label="3D-модель насосного агрегату К80-50-200"></canvas>
+      <div class="loading" id="loading"><span lang="uk">Завантаження моделі…</span><span lang="en">Loading the model…</span> <span id="pct"></span></div>
+      <div class="hud" id="hud"></div>
+      <div class="labels" id="labels"></div>
+      <div class="tip" id="tip"></div>
+      <div class="stepbar" id="stepbar" hidden>
+        <div class="sb-t"><small id="sbN"></small><span id="sbT"></span></div>
+        <button class="tb" type="button" id="sbPrev" data-aria-uk="Попередній крок" data-aria-en="Previous step" aria-label="Попередній крок"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3 5 8l5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <button class="tb" type="button" id="sbNext" data-aria-uk="Наступний крок" data-aria-en="Next step" aria-label="Наступний крок"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m6 3 5 5-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <button class="tb" type="button" id="sbExit" data-aria-uk="Вийти з процедури" data-aria-en="Leave the procedure" aria-label="Вийти з процедури"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+      </div>
+      <div class="toolbar" role="toolbar" data-aria-uk="Керування моделлю" data-aria-en="Model controls" aria-label="Керування моделлю">
+        <label class="ex"><span lang="uk">Зібрано</span><span lang="en">Assembled</span><input type="range" id="explode" min="0" max="100" value="0" data-aria-uk="Розібрати агрегат" data-aria-en="Explode the unit" aria-label="Розібрати агрегат"><span lang="uk">Розібрано</span><span lang="en">Exploded</span></label>
+        <button class="tb" type="button" id="bClip" aria-pressed="false"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1v14M2.5 4.5h4M2.5 8h4M2.5 11.5h4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><rect x="9.5" y="3" width="4" height="10" rx="1" fill="none" stroke="currentColor" stroke-width="1.6"/></svg><span class="tx"><span lang="uk">Розріз</span><span lang="en">Section</span></span></button>
+        <button class="tb" type="button" id="bSens" aria-pressed="true"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="5" width="10" height="7" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M5 3.2a5 5 0 0 1 6 0" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg><span class="tx"><span lang="uk">Датчики</span><span lang="en">Sensors</span></span></button>
+        <button class="tb" type="button" id="bSpin" aria-pressed="false"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M13 8a5 5 0 1 1-1.5-3.6M13 2.5v2.6h-2.6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="tx"><span lang="uk">Обертання</span><span lang="en">Spin</span></span></button>
+        <button class="tb" type="button" id="bView"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.8 14 5v6l-6 3.2L2 11V5z M2 5l6 3.2L14 5M8 8.2v6" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg><span class="tx" id="viewName"></span></button>
+        <button class="tb" type="button" id="bReset"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8a5 5 0 1 0 1.5-3.6M3 2.5v2.6h2.6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="tx"><span lang="uk">Скинути</span><span lang="en">Reset</span></span></button>
+      </div>
+    </div>
+
+    <aside class="side">
+      <div class="tabs" role="tablist" data-aria-uk="Розділи моделі" data-aria-en="Model sections" aria-label="Розділи моделі">
+        <button type="button" role="tab" id="t-parts" aria-controls="tab-parts" aria-selected="true"><span lang="uk">Деталі</span><span lang="en">Parts</span></button>
+        <button type="button" role="tab" id="t-sensors" aria-controls="tab-sensors" aria-selected="false"><span lang="uk">Датчики</span><span lang="en">Sensors</span></button>
+        <button type="button" role="tab" id="t-faults" aria-controls="tab-faults" aria-selected="false"><span lang="uk">Несправності</span><span lang="en">Faults</span></button>
+        <button type="button" role="tab" id="t-proc" aria-controls="tab-proc" aria-selected="false"><span lang="uk">Ремонт</span><span lang="en">Repair</span></button>
+      </div>
+      <div class="tabpanel" id="tab-parts" role="tabpanel" aria-labelledby="t-parts"></div>
+      <div class="tabpanel" id="tab-sensors" role="tabpanel" aria-labelledby="t-sensors" hidden></div>
+      <div class="tabpanel" id="tab-faults" role="tabpanel" aria-labelledby="t-faults" hidden></div>
+      <div class="tabpanel" id="tab-proc" role="tabpanel" aria-labelledby="t-proc" hidden></div>
+    </aside>
+  </div>
+</section>
+
+<section id="normy">
+  <div class="wrap">
+    <span class="eyebrow"><span lang="uk">Для аналітики</span><span lang="en">For the analytics</span></span>
+    <h2><span lang="uk">Норми виробника і частоти, на які дивиться Flowbit</span><span lang="en">Manufacturer limits and the frequencies Flowbit watches</span></h2>
+    <p class="lead"><span lang="uk">Межі взято з настанови з експлуатації Ливгидромаш на К80-50-200 (виконання -Е). Для загальнопромислового насоса з сальником це найближчий офіційний орієнтир; паспорт вашого насоса має пріоритет.</span><span lang="en">Limits are from the Livgidromash operating manual for the K80-50-200 (-E version). For the general-purpose packed pump this is the closest official reference; your pump's own passport takes priority.</span></p>
+    <div class="two">
+      <div class="tw"><table>
+        <thead><tr><th><span lang="uk">Що</span><span lang="en">What</span></th><th><span lang="uk">Межа</span><span lang="en">Limit</span></th><th><span lang="uk">Пункт РЕ</span><span lang="en">Manual §</span></th></tr></thead>
+        <tbody>
+          <tr><td><span lang="uk">Вібрація підшипникових вузлів, СКЗ швидкості</span><span lang="en">Bearing housing vibration, RMS velocity</span></td><td class="num">≤ 4,5 <span lang="uk">мм/с</span><span lang="en">mm/s</span></td><td class="num"><span lang="uk">дод. А</span><span lang="en">App. A</span></td></tr>
+          <tr><td><span lang="uk">Понад норму — усунути причину за</span><span lang="en">Above the limit — fix the cause within</span></td><td class="num">30 <span lang="uk">діб</span><span lang="en">days</span></td><td class="num"><span lang="uk">дод. А</span><span lang="en">App. A</span></td></tr>
+          <tr><td><span lang="uk">Понад 7,1 мм/с — працювати не довше</span><span lang="en">Above 7.1 mm/s — run no longer than</span></td><td class="num">7 <span lang="uk">діб</span><span lang="en">days</span></td><td class="num"><span lang="uk">дод. А</span><span lang="en">App. A</span></td></tr>
+          <tr><td><span lang="uk">Аварійне відключення за вібрацією</span><span lang="en">Vibration trip</span></td><td class="num">11,2 <span lang="uk">мм/с</span><span lang="en">mm/s</span></td><td class="num">3.6.3</td></tr>
+          <tr><td><span lang="uk">Вібрація в місцях кріплення до фундаменту</span><span lang="en">Vibration at the foundation fixings</span></td><td class="num">≤ 2,8 <span lang="uk">мм/с</span><span lang="en">mm/s</span></td><td class="num"><span lang="uk">дод. А</span><span lang="en">App. A</span></td></tr>
+          <tr><td><span lang="uk">Температура підшипників</span><span lang="en">Bearing temperature</span></td><td class="num">≤ 90 °C, ≤ t<sub><span lang="uk">пов</span><span lang="en">air</span></sub> + 50 °C</td><td class="num">3.2.2</td></tr>
+          <tr><td><span lang="uk">Мастило підшипників</span><span lang="en">Bearing grease</span></td><td><span lang="uk">Літол-24, 0,04 кг; через 100 год у перший місяць, далі кожні 1000 год</span><span lang="en">Litol-24, 0.04 kg; after 100 h in the first month, then every 1000 h</span></td><td class="num">4.3.3</td></tr>
+          <tr><td><span lang="uk">Центрування валів (розбіжність показів індикатора)</span><span lang="en">Shaft alignment (dial indicator spread)</span></td><td class="num">≤ 0,12 <span lang="uk">мм</span><span lang="en">mm</span></td><td class="num">2.3.10</td></tr>
+          <tr><td><span lang="uk">Непаралельність фланців трубопроводів</span><span lang="en">Pipe flange non-parallelism</span></td><td class="num">≤ 0,15 <span lang="uk">мм на 100 мм</span><span lang="en">mm per 100 mm</span></td><td class="num">2.3.4</td></tr>
+          <tr><td><span lang="uk">Робота на закриту засувку</span><span lang="en">Running against a closed valve</span></td><td class="num">≤ 2 <span lang="uk">хв</span><span lang="en">min</span></td><td class="num">3.4.4</td></tr>
+          <tr><td><span lang="uk">Опір ізоляції двигуна (мегомметр 500 В)</span><span lang="en">Motor insulation resistance (500 V megger)</span></td><td class="num">≥ 1 <span lang="uk">МОм</span><span lang="en">MΩ</span></td><td class="num">2.3.5</td></tr>
+          <tr><td><span lang="uk">Ресурс до капремонту / наробіток на відмову</span><span lang="en">Life to overhaul / mean time to failure</span></td><td class="num">24 000 / 12 000 <span lang="uk">год</span><span lang="en">h</span></td><td class="num">5</td></tr>
+        </tbody>
+      </table></div>
+      <div class="tw"><table>
+        <thead><tr><th><span lang="uk">Частота (2900 об/хв)</span><span lang="en">Frequency (2900 rpm)</span></th><th><span lang="uk">Гц</span><span lang="en">Hz</span></th><th><span lang="uk">Що означає</span><span lang="en">Meaning</span></th></tr></thead>
+        <tbody>
+          <tr><td>1× · 2× · 3×</td><td class="num">48,3 · 96,7 · 145</td><td><span lang="uk">дисбаланс, розцентрування, ослаблення</span><span lang="en">unbalance, misalignment, looseness</span></td></tr>
+          <tr><td>½×</td><td class="num">24,2</td><td><span lang="uk">сильне ослаблення, тертя</span><span lang="en">severe looseness, rubbing</span></td></tr>
+          <tr><td><span lang="uk">2× мережі</span><span lang="en">2× line</span></td><td class="num">100</td><td><span lang="uk">статор, несиметрія живлення</span><span lang="en">stator, supply unbalance</span></td></tr>
+          <tr><td><span lang="uk">Бічні смуги ±f<sub>p</sub> біля 1×</span><span lang="en">±f<sub>p</sub> sidebands at 1×</span></td><td class="num">± 3,3</td><td><span lang="uk">стрижні ротора двигуна</span><span lang="en">motor rotor bars</span></td></tr>
+          <tr><td>306: FTF · BSF · BPFO</td><td class="num">18,6 · 100 · 149</td><td><span lang="uk">сепаратор, кульки, зовнішнє кільце</span><span lang="en">cage, balls, outer race</span></td></tr>
+          <tr><td>306: BPFI</td><td class="num">238 <span class="chip mut">W</span></td><td><span lang="uk">внутрішнє кільце — поза смугою E</span><span lang="en">inner race — outside the E band</span></td></tr>
+          <tr><td>6309: FTF · BSF · BPFO</td><td class="num">18,4 · 94,5 · 147</td><td><span lang="uk">підшипники двигуна (типово 6309)</span><span lang="en">motor bearings (typically 6309)</span></td></tr>
+          <tr><td><span lang="uk">Лопатева 6× / пальці муфти 6×</span><span lang="en">Vane pass 6× / coupling pins 6×</span></td><td class="num">290 <span class="chip mut">W</span></td><td><span lang="uk">гідравліка, щілинне кільце, муфта</span><span lang="en">hydraulics, wear ring, coupling</span></td></tr>
+        </tbody>
+      </table></div>
+    </div>
+    <p class="small" style="margin-top:14px"><span lang="uk">Flowbit E: тривісний акселерометр, 400 вимірів/с, аналіз 2–160 Гц, FFT на 512 точок — 0,78 Гц на бін, тож 145 Гц (3×) і 149 Гц (BPFO) розрізняються. Позначка W — частоти для широкосмугового Flowbit W.</span><span lang="en">Flowbit E: 3-axis accelerometer, 400 samples/s, analysis 2–160 Hz, 512-point FFT — 0.78 Hz per bin, so 145 Hz (3×) and 149 Hz (BPFO) are told apart. W marks frequencies for the wideband Flowbit W.</span></p>
+  </div>
+</section>
+
+<section id="dzherela">
+  <div class="wrap">
+    <span class="eyebrow"><span lang="uk">Звідки дані</span><span lang="en">Where the data comes from</span></span>
+    <h2><span lang="uk">Джерела</span><span lang="en">Sources</span></h2>
+    <p class="lead"><span lang="uk">Модель зібрана параметрично в Blender за розмірами з цих документів. Розміри, яких у документах немає (товщини стінок, ребра, деталі двигуна), оцінені за пропорціями креслень. Модель — для навчання й демонстрації, вона не замінює паспорт насоса.</span><span lang="en">The model was built parametrically in Blender from the sizes in these documents. Sizes the documents do not give (wall thickness, ribs, motor details) were estimated from the drawings' proportions. The model is for training and demonstration and does not replace the pump's passport.</span></p>
+    <ul class="src">
+      <li><a href="https://sealing.com.ua/wa-data/public/site/docs/Ukrnasosservis_Catalog_%D0%9A.pdf" target="_blank" rel="noopener">Укрнасоссервіс — каталог насосів типу К</a> — <span lang="uk">габарити насоса й агрегату з АИР160S2, фланці, робоче колесо</span><span lang="en">pump and unit dimensions with AIR160S2, flanges, impeller</span></li>
+      <li><a href="https://www.hms-livgidromash.ru/upload/iblock/1fd/r9l3p82jrk3zksl847p8x3eh2fa2p6a3/K-80_50_200_E-_-N49.917.00.000-RE.pdf" target="_blank" rel="noopener">ГМС Ливгидромаш — РЕ Н49.917.00.000 «Насос К 80-50-200-Е»</a> — <span lang="uk">розріз, габаритне креслення, норми вібрації й температури, мастило, центрування, порядок розбирання</span><span lang="en">section, outline drawing, vibration and temperature limits, grease, alignment, disassembly order</span></li>
+      <li><a href="https://www.bibliofond.ru/view.aspx?id=723394" target="_blank" rel="noopener">«Ремонт центробежного насоса К-80-50-200»</a> — <span lang="uk">порядок розбирання варіанта з сальником, нагрів підшипників до 80–90 °C, обкатка</span><span lang="en">disassembly order of the packed version, heating bearings to 80–90 °C, run-in</span></li>
+      <li><a href="https://www.oss.nsk.com/6306-dgbb-sr.html" target="_blank" rel="noopener">NSK 6306</a> · <a href="https://eshop.ntn-snr.com/en/product/6306-SNR/6306" target="_blank" rel="noopener">NTN-SNR 6306</a> — <span lang="uk">8 кульок Ø11,906 мм, частоти дефектів BPFO 3,084 і BPFI 4,916 на оберт</span><span lang="en">8 balls Ø11.906 mm, defect factors BPFO 3.084 and BPFI 4.916 per revolution</span></li>
+      <li><a href="https://prima-zip.ru/goods/Zapchasti-k-nasosu-K80-50" target="_blank" rel="noopener">Запчастини К80-50-200</a> — <span lang="uk">підшипник 306, напівмуфти ПН140 і ПД140</span><span lang="en">bearing 306, coupling halves PN140 and PD140</span></li>
+      <li><a href="https://dn.ru/storage/certificates/nasoselektroprom/elektrodvigateli/tech-air_f.pdf" target="_blank" rel="noopener">АИР — технічні дані</a> — <span lang="uk">кінець вала Ø42×110, лапи 254×178, висота осі 160</span><span lang="en">shaft end Ø42×110, feet 254×178, shaft height 160</span></li>
+      <li><a href="https://chesterton.com/Files/Product%20Assets/Packing%20and%20Gaskets/migraphmax_EN.pdf" target="_blank" rel="noopener">Chesterton</a> · <a href="https://pumpsandsystems.com/back-basics-compression-packing" target="_blank" rel="noopener">Pumps &amp; Systems</a> — <span lang="uk">укладання набивки: косий різ, зміщення стиків, поступове підтягування</span><span lang="en">packing installation: skive cut, staggered joints, gradual adjustment</span></li>
+    </ul>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>FLOWBIT · К80-50-200 · 3D</span>
+    <span><span lang="uk">Демо-модель для навчання. Не замінює паспорт і настанову виробника.</span><span lang="en">Demo model for training. Does not replace the manufacturer's passport and manual.</span></span>
+    <a href="index.html"><span lang="uk">← На головну</span><span lang="en">← Home</span></a>
+  </div>
+</footer>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* private mode */ } }
+};
+let LANG = 'uk';
+{ const h0 = location.hash.slice(1); if (h0 === 'en' || h0 === 'uk') LANG = h0; else { const s = store.get('flowbit-lang'); if (s === 'en' || s === 'uk') LANG = s; } }
+const T = o => (o && typeof o === 'object' && !Array.isArray(o)) ? (o[LANG] ?? o.uk) : o;
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c]));
+
+// ===================================================================== interface strings
+const I = {
+  uk: {
+    views: ['Ізометрія', 'Спереду', 'Зверху', 'З боку насоса'], loading: 'Завантаження моделі…', fail: 'Не вдалося показати 3D: ',
+    noWebgl: 'браузер не підтримує WebGL. Нижче — рендер моделі.', pick: 'Натисніть деталь у 3D або в списку, щоб побачити, що вона робить і як ламається.',
+    role: 'Що робить', spec: 'Дані', fails: 'Як ламається', sees: 'Хто бачить', proc: 'Ремонт', none: 'вібраційні датчики майже не бачать — дивіться манометр і огляд',
+    focus: 'Показати в 3D', hud: 'К80-50-200 · АИР160S2', sel: 'вибрано',
+    sensIntro: 'Flowbit E кріпиться магнітом на алюмінієвій планці. Кожна точка — один тривісний датчик: осі X — уздовж вала, Y і Z — радіальні.',
+    minSet: 'Мінімальний набір — 2 датчики біля муфти (P-DE і M-DE): вони бачать найчастіші несправності. Повний — 4.',
+    rulesT: 'Як ставити', rules: ['Метал під датчиком чистий і рівний, без товстої фарби; на кривій поверхні — приклеїти сталеву площадку.', 'Якомога ближче до підшипника, на жорсткому корпусі, не на кожусі й не на ребрі.', 'Щоразу те саме місце — позначте його фарбою: тренд важливіший за одну цифру.', 'Під час реєстрації вкажіть у додатку, куди дивляться осі X, Y, Z.', 'Акумулятор 18650 не любить спеки: поверхні гарячіші за 60 °C — через проставку або Flowbit rev B.'],
+    where: 'Де', axes: 'Осі', seesT: 'Що бачить', prio1: 'обов’язкова', prio2: 'розширена',
+    faultsIntro: 'Типові несправності К80-50-200: як вони виглядають у вібрації й температурі, хто з датчиків їх бачить і що робити. Відкрийте картку — потрібні деталі підсвітяться в 3D.',
+    signs: 'Ознаки', read: 'Як читати', causes: 'Причини', todo: 'Що робити', sp: 'Еталонний спектр', open: 'Відкрити процедуру',
+    cov: {full: 'Flowbit E бачить', part: 'бачить частково', weak: 'потрібен Flowbit W або манометр'},
+    sev: {crit: 'критично', warn: 'увага'}, band: 'смуга Flowbit E', hz: 'Гц', outband: 'поза смугою E',
+    procIntro: 'Покрокові процедури: на кожному кроці модель показує, які деталі знімати і куди вони рухаються. Безпека — завжди перший крок.',
+    steps: 'кроків', step: 'Крок', of: 'з', prev: 'Назад', next: 'Далі', exit: 'До списку', done: 'Готово', related: 'Пов’язана процедура',
+    tools: 'Інструмент', when: 'Коли', fromFault: 'Для несправності'
+  },
+  en: {
+    views: ['Isometric', 'Front', 'Top', 'Pump end'], loading: 'Loading the model…', fail: 'Could not show 3D: ',
+    noWebgl: 'this browser has no WebGL. Below is a render of the model.', pick: 'Tap a part in 3D or in the list to see what it does and how it fails.',
+    role: 'What it does', spec: 'Data', fails: 'How it fails', sees: 'Seen by', proc: 'Repair', none: 'vibration sensors barely see it — use the pressure gauge and inspection',
+    focus: 'Show in 3D', hud: 'K80-50-200 · AIR160S2', sel: 'selected',
+    sensIntro: 'Flowbit E mounts with a magnet on an aluminium strip. Each point is one 3-axis sensor: X along the shaft, Y and Z radial.',
+    minSet: 'Minimum set — 2 sensors next to the coupling (P-DE and M-DE): they catch the most common faults. Full set — 4.',
+    rulesT: 'How to mount', rules: ['Clean, flat metal under the sensor, no thick paint; on a curved surface glue on a steel pad.', 'As close to the bearing as possible, on the rigid housing, not on a cover or a fin.', 'The same spot every time — mark it with paint: the trend matters more than one number.', 'When registering, note in the app where the X, Y and Z axes point.', 'The 18650 cell dislikes heat: surfaces above 60 °C need a spacer or a Flowbit rev B.'],
+    where: 'Where', axes: 'Axes', seesT: 'What it sees', prio1: 'required', prio2: 'extended',
+    faultsIntro: 'Typical K80-50-200 faults: how they look in vibration and temperature, which sensor sees them and what to do. Open a card and the parts light up in 3D.',
+    signs: 'Signs', read: 'How to read it', causes: 'Causes', todo: 'What to do', sp: 'Reference spectrum', open: 'Open the procedure',
+    cov: {full: 'Flowbit E sees it', part: 'partly seen', weak: 'needs Flowbit W or a gauge'},
+    sev: {crit: 'critical', warn: 'warning'}, band: 'Flowbit E band', hz: 'Hz', outband: 'outside the E band',
+    procIntro: 'Step-by-step procedures: at every step the model shows which parts come off and where they go. Safety is always the first step.',
+    steps: 'steps', step: 'Step', of: 'of', prev: 'Back', next: 'Next', exit: 'To the list', done: 'Done', related: 'Related procedure',
+    tools: 'Tools', when: 'When', fromFault: 'For the fault'
+  }
+};
+const L = () => I[LANG];
+
+// ===================================================================== data: groups and parts
+const GROUPS = [
+  {id: 'casing', uk: 'Корпус і проточна частина', en: 'Casing and wet end', parts: ['pump.casing', 'pump.wear_ring', 'pump.plug_vent', 'pump.plug_drain', 'pump.arrow']},
+  {id: 'rotor', uk: 'Ротор насоса', en: 'Pump rotor', parts: ['rotor.impeller', 'rotor.impeller_nut', 'rotor.key_impeller', 'rotor.shaft', 'rotor.key_coupling']},
+  {id: 'seal', uk: 'Ущільнення вала (сальник)', en: 'Shaft seal (packing)', parts: ['pump.cover', 'seal.sleeve', 'seal.packing', 'seal.gland', 'seal.studs']},
+  {id: 'bracket', uk: 'Кронштейн і підшипники', en: 'Bracket and bearings', parts: ['pump.bracket', 'pump.bearing_nde', 'pump.bearing_de', 'pump.cover_front', 'pump.cover_rear', 'seal.lips', 'pump.grease_nipples', 'pump.temp_ports', 'pump.bolts_flange', 'pump.bolts_covers', 'pump.foot']},
+  {id: 'coupling', uk: 'Муфта', en: 'Coupling', parts: ['coupling.half_pump', 'coupling.pins', 'coupling.bushings', 'coupling.half_motor', 'coupling.guard']},
+  {id: 'motor', uk: 'Двигун АИР160S2', en: 'AIR160S2 motor', parts: ['motor.frame', 'motor.stator', 'motor.winding', 'motor.rotor', 'motor.key', 'motor.bearing_de', 'motor.bearing_nde', 'motor.shield_de', 'motor.shield_nde', 'motor.fan', 'motor.fan_cover', 'motor.terminal_box', 'motor.eyebolt', 'motor.nameplate']},
+  {id: 'frame', uk: 'Рама і кріплення', en: 'Frame and fasteners', parts: ['frame.base', 'frame.shims', 'frame.bolts_pump', 'frame.bolts_motor', 'frame.anchors']},
+  {id: 'sensor', uk: 'Датчики Flowbit E', en: 'Flowbit E sensors', parts: ['sensor.P_DE', 'sensor.P_NDE', 'sensor.M_DE', 'sensor.M_NDE']}
+];
+
+const BEAR306 = {uk: '306 (30×72×19), 8 кульок Ø11,9 · на 2900 об/хв: BPFO 149 Гц, BPFI 238 Гц, BSF 100 Гц, FTF 18,6 Гц', en: '306 (30×72×19), 8 balls Ø11.9 · at 2900 rpm: BPFO 149 Hz, BPFI 238 Hz, BSF 100 Hz, FTF 18.6 Hz'};
+const BEARFAIL = {uk: 'Нестача або старе мастило, вода й бруд через зношену манжету, розцентрування, перетяг при посадці. Межа — 90 °C і не більше ніж на 50 °C понад температуру приміщення.', en: 'Too little or old grease, water and dirt through a worn lip seal, misalignment, damage when fitting. Limit — 90 °C and no more than 50 °C above room temperature.'};
+const MBEAR = {uk: 'Типово 6309-2Z (45×100×25) — звірте з табличкою двигуна. BPFO ≈ 147 Гц на 2900 об/хв.', en: 'Typically 6309-2Z (45×100×25) — check the motor nameplate. BPFO ≈ 147 Hz at 2900 rpm.'};
+
+const INFO = {
+  'pump.casing': {r: {uk: 'Чавунний спіральний корпус: збирає воду з колеса й перетворює швидкість на тиск. Вхід DN80 по осі, вихід DN50 вертикально вгору. Під час ремонту корпус лишається на рамі й трубах — ротор виймають назад разом із кронштейном.', en: 'Cast-iron volute casing: collects water from the impeller and turns speed into pressure. DN80 axial inlet, DN50 outlet straight up. During repair the casing stays on the frame and pipes — the rotor comes out backwards with the bracket.'}, s: {uk: 'Вхід DN80: фланець 140×140, виступ Ø128, 4×М16 · вихід DN50: 125×125, Ø102 · лапи 4×Ø14, 212×70 мм · вісь на 160 мм', en: 'Inlet DN80: flange 140×140, raised face Ø128, 4×M16 · outlet DN50: 125×125, Ø102 · feet 4×Ø14, 212×70 mm · shaft at 160 mm'}, f: {uk: 'Ерозія й кавітаційні раковини біля язика спіралі та на вході; тріщини від гідроудару чи замерзлої води.', en: 'Erosion and cavitation pits at the volute tongue and inlet; cracks from water hammer or frozen water.'}, v: ['P_NDE'], p: ['ring']},
+  'pump.wear_ring': {r: {uk: 'Змінне щілинне кільце між корпусом і вічком колеса. Тримає малий зазор, щоб вода не поверталась із напору назад на вхід.', en: 'Replaceable wear ring between the casing and the impeller eye. Keeps a small gap so water does not flow back from discharge to suction.'}, s: {uk: 'Ø48/55 × 16 мм у моделі · бронза або чавун', en: 'Ø48/55 × 16 mm in the model · bronze or cast iron'}, f: {uk: 'Зазор росте від зносу — падають напір і ККД, росте струм. Граничний стан за РЕ — напір нижчий за номінальний більш ніж на 10 %.', en: 'The gap grows with wear — head and efficiency drop, current rises. Limit state per the manual — head more than 10 % below nominal.'}, v: [], p: ['ring']},
+  'pump.plug_vent': {r: {uk: 'Пробка М12×1,5 у верхній точці корпусу — випустити повітря перед пуском.', en: 'M12×1.5 plug at the top of the casing — bleed the air before starting.'}, f: {uk: 'Повітря в насосі — зрив подачі й сухий сальник.', en: 'Air in the pump — loss of flow and a dry packing.'}},
+  'pump.plug_drain': {r: {uk: 'Пробка внизу корпусу — злити воду перед розбиранням і на зиму.', en: 'Plug at the bottom of the casing — drain the water before dismantling and for winter.'}},
+  'pump.arrow': {r: {uk: 'Червона стрілка — напрямок обертання: за годинниковою стрілкою, якщо дивитися з боку двигуна.', en: 'Red arrow — direction of rotation: clockwise seen from the motor.'}, f: {uk: 'Зворотне обертання (переплутані фази) — насос майже не дає напору. Лікується перестановкою двох фаз.', en: 'Reverse rotation (swapped phases) — the pump gives almost no head. Fixed by swapping two phases.'}},
+  'rotor.impeller': {r: {uk: 'Закрите робоче колесо Ø200 мм, 6 лопатей, обертання праве. Розвантажувальні отвори в задньому диску зменшують осьову силу.', en: 'Closed impeller Ø200 mm, 6 vanes, right-hand rotation. Balance holes in the back shroud reduce the axial thrust.'}, s: {uk: 'D 200 · вічко Ø95 · ширина на виході 15 мм · отвір Ø24 зі шпонкою 8', en: 'D 200 · eye Ø95 · outlet width 15 mm · bore Ø24 with key 8'}, f: {uk: 'Дисбаланс (відкладення, ерозія, зламана лопать), кавітаційна ерозія на вході лопатей, знос шийки вічка.', en: 'Unbalance (deposits, erosion, broken vane), cavitation erosion at the vane inlets, worn eye neck.'}, v: ['P_NDE', 'P_DE'], p: ['ring']},
+  'rotor.impeller_nut': {r: {uk: 'Гайка-обтічник тримає колесо на валу й згладжує потік у вічку. Фіксується стопорною шайбою.', en: 'Cap nut holds the impeller on the shaft and smooths the flow in the eye. Secured with a tab washer.'}, f: {uk: 'Може відкрутитися при зворотному обертанні.', en: 'Can unscrew with reverse rotation.'}, p: ['ring', 'bear']},
+  'rotor.key_impeller': {r: {uk: 'Шпонка 8×7 передає момент з вала на колесо.', en: '8×7 key transmits torque from the shaft to the impeller.'}},
+  'rotor.shaft': {r: {uk: 'Вал зі сталі 45: посадка колеса Ø24, під захисною втулкою Ø28, під підшипники Ø30, між ними Ø36, кінець під муфту Ø24 зі шпонкою.', en: 'Steel 45 shaft: impeller seat Ø24, Ø28 under the sleeve, Ø30 bearing seats, Ø36 between them, Ø24 coupling end with a key.'}, f: {uk: 'Згин (биття), знос під втулкою, знос посадок підшипників.', en: 'Bending (runout), wear under the sleeve, worn bearing seats.'}, v: ['P_DE'], p: ['bear']},
+  'rotor.key_coupling': {r: {uk: 'Шпонка 8×7 під напівмуфту насоса.', en: '8×7 key for the pump coupling half.'}},
+  'pump.cover': {r: {uk: 'Кришка корпусу — задня стінка камери колеса з сальниковою камерою. Затиснута між корпусом і кронштейном вісьмома болтами М12.', en: 'Casing cover — back wall of the impeller chamber with the stuffing box. Clamped between the casing and the bracket by eight M12 bolts.'}, f: {uk: 'Знос камери, тріщини. Зазор від колеса до кришки — 3 ± 0,5 мм (РЕ п. 4.3.6.15).', en: 'Worn stuffing box, cracks. Impeller-to-cover gap — 3 ± 0.5 mm (manual §4.3.6.15).'}, p: ['pack', 'bear']},
+  'seal.sleeve': {r: {uk: 'Змінна захисна втулка Ø35: по ній працює набивка, щоб не зношувався сам вал.', en: 'Replaceable Ø35 shaft sleeve: the packing runs on it so the shaft itself does not wear.'}, f: {uk: 'Кільцеві борозни від перетягнутої або брудної набивки — постійний витік. Міняють втулку, а не вал.', en: 'Circular grooves from over-tight or dirty packing — constant leakage. Replace the sleeve, not the shaft.'}, p: ['pack']},
+  'seal.packing': {r: {uk: 'М’яка сальникова набивка: 4 кільця шнура 8×8 (типово ХБП-31 або АП-31). Має трохи підтікати — вода змащує й охолоджує.', en: 'Soft gland packing: 4 rings of 8×8 braid (typically KhBP-31 or AP-31). It must drip a little — water lubricates and cools it.'}, f: {uk: 'Перетяг — перегрів, дим, знос втулки; знос або недотяг — струмінь води й повітря в насосі.', en: 'Over-tightened — overheating, smoke, sleeve wear; worn or loose — a jet of water and air in the pump.'}, v: ['P_NDE'], p: ['pack']},
+  'seal.gland': {r: {uk: 'Кришка сальника (нажимна втулка): дві шпильки М10 рівномірно стискають набивку.', en: 'Gland follower: two M10 studs compress the packing evenly.'}, f: {uk: 'Перекіс при нерівній затяжці — набивка гріється з одного боку.', en: 'Cocked by uneven tightening — the packing heats up on one side.'}, p: ['pack']},
+  'seal.studs': {r: {uk: 'Шпильки й гайки кришки сальника. Підтягувати по пів грані й тільки на зупиненому агрегаті (РЕ п. 3.7.9).', en: 'Gland studs and nuts. Tighten half a flat at a time and only with the unit stopped (manual §3.7.9).'}, p: ['pack']},
+  'pump.bracket': {r: {uk: 'Чавунний кронштейн тримає вал на двох підшипниках і має вікна для доступу до сальника. Задня лапа стоїть на рамі.', en: 'Cast-iron bracket holds the shaft on two bearings and has windows to reach the packing. Its rear foot stands on the frame.'}, s: {uk: 'Корпус підшипників Ø108 · 2 отвори М8×1 під термодатчики · мастило Літол-24', en: 'Bearing housing Ø108 · 2 M8×1 ports for temperature sensors · Litol-24 grease'}, f: {uk: 'Ослаблена лапа, знос посадок під підшипники.', en: 'Loose foot, worn bearing seats.'}, v: ['P_DE', 'P_NDE'], p: ['bear']},
+  'pump.bearing_nde': {r: {uk: 'Кульковий підшипник з боку колеса — бере радіальне навантаження від гідравліки.', en: 'Ball bearing on the impeller side — takes the radial hydraulic load.'}, s: BEAR306, f: BEARFAIL, v: ['P_NDE'], p: ['bear']},
+  'pump.bearing_de': {r: {uk: 'Кульковий підшипник з боку муфти — бере навантаження від муфти й розцентрування.', en: 'Ball bearing on the coupling side — takes the loads from the coupling and misalignment.'}, s: BEAR306, f: BEARFAIL, v: ['P_DE'], p: ['bear']},
+  'pump.cover_front': {r: {uk: 'Передня кришка підшипника з манжетою — тримає підшипник і не пускає воду з сальника в мастило.', en: 'Front bearing cover with a lip seal — holds the bearing and keeps water from the packing out of the grease.'}, p: ['bear']},
+  'pump.cover_rear': {r: {uk: 'Задня кришка підшипника з манжетою з боку муфти.', en: 'Rear bearing cover with a lip seal on the coupling side.'}, p: ['bear']},
+  'seal.lips': {r: {uk: 'Гумові манжети в кришках підшипників.', en: 'Rubber lip seals in the bearing covers.'}, f: {uk: 'Зношена манжета — вода в мастилі — швидкий кінець підшипника.', en: 'A worn lip seal lets water into the grease and the bearing dies fast.'}, p: ['bear']},
+  'pump.grease_nipples': {r: {uk: 'Маслянки для мастила Літол-24: у перший місяць — через 100 год роботи, далі кожні 1000 год (РЕ п. 4.3.3).', en: 'Grease nipples for Litol-24: after 100 h in the first month, then every 1000 h (manual §4.3.3).'}, p: ['bear']},
+  'pump.temp_ports': {r: {uk: 'Отвори М8×1 у кронштейні під термодатчики підшипників (за РЕ). Межа: 90 °C і не більше ніж на 50 °C понад температуру приміщення.', en: 'M8×1 ports in the bracket for bearing temperature sensors (per the manual). Limit: 90 °C and no more than 50 °C above room temperature.'}},
+  'pump.bolts_flange': {r: {uk: '8 болтів М12 кріплять кронштейн до корпусу. Знімаються, коли ротор виймають назад; для відділення є віджимні гвинти.', en: '8 M12 bolts hold the bracket to the casing. They come out when the rotor is pulled back; jack screws separate the joint.'}, p: ['bear', 'ring']},
+  'pump.bolts_covers': {r: {uk: 'Болти М8 кришок підшипників.', en: 'M8 bearing cover bolts.'}, p: ['bear']},
+  'pump.foot': {r: {uk: 'Опорна лапа під корпусом підшипників, два пази 14 мм.', en: 'Support foot under the bearing housing, two 14 mm slots.'}, f: {uk: 'Ослаблені болти або «м’яка лапа» — вібрація з гармоніками.', en: 'Loose bolts or a soft foot — vibration with harmonics.'}, v: ['P_DE'], p: ['align']},
+  'coupling.half_pump': {r: {uk: 'Напівмуфта насоса Ø140 (ПН140) із шістьма пальцями, на кінці вала Ø24 зі шпонкою.', en: 'Pump coupling half Ø140 (PN140) with six pins, on the Ø24 shaft end with a key.'}, f: {uk: 'Розбиті отвори під пальці, биття.', en: 'Worn pin holes, runout.'}, v: ['P_DE'], p: ['bush', 'align']},
+  'coupling.pins': {r: {uk: '6 пальців Ø14 з гайками, закріплені в напівмуфті насоса.', en: '6 Ø14 pins with nuts, fixed in the pump half.'}, p: ['bush']},
+  'coupling.bushings': {r: {uk: 'Гумові пружні втулки на пальцях гасять поштовхи й невелику неспіввісність.', en: 'Rubber bushings on the pins absorb shocks and small misalignment.'}, f: {uk: 'Тверднуть, тріскаються, стираються — удари на пуску, ріст 2× і осьової вібрації, гумовий пил під огородженням.', en: 'Harden, crack and wear — knocks at start-up, rising 2× and axial vibration, rubber dust under the guard.'}, v: ['P_DE', 'M_DE'], p: ['bush']},
+  'coupling.half_motor': {r: {uk: 'Напівмуфта двигуна Ø140 (ПД140) на валу Ø42; в її отвори входять пальці з втулками. Зазор між напівмуфтами в моделі — 4 мм.', en: 'Motor coupling half Ø140 (PD140) on the Ø42 shaft; the pins with bushings go into its holes. Gap between the halves in the model — 4 mm.'}, v: ['M_DE'], p: ['bush', 'align']},
+  'coupling.guard': {r: {uk: 'Огородження муфти. Працювати без нього заборонено (РЕ п. 3.4.4).', en: 'Coupling guard. Running without it is forbidden (manual §3.4.4).'}},
+  'motor.frame': {r: {uk: 'Станина з ребрами охолодження й лапами: 4 отвори Ø15, 254×178 мм, вісь на висоті 160 мм.', en: 'Finned frame with feet: 4 holes Ø15, 254×178 mm, shaft height 160 mm.'}, v: ['M_DE', 'M_NDE']},
+  'motor.stator': {r: {uk: 'Пакет сталі статора.', en: 'Stator core.'}},
+  'motor.winding': {r: {uk: 'Обмотка статора 15 кВт, 380/660 В.', en: 'Stator winding, 15 kW, 380/660 V.'}, f: {uk: 'Міжвиткове замикання, перегрів, несиметрія фаз — пік 100 Гц у спектрі (2× частота мережі).', en: 'Turn-to-turn short, overheating, phase unbalance — a 100 Hz peak in the spectrum (2× line frequency).'}, v: ['M_DE', 'M_NDE']},
+  'motor.rotor': {r: {uk: 'Короткозамкнений ротор з валом, кінець вала Ø42×110.', en: 'Squirrel-cage rotor with shaft, Ø42×110 shaft end.'}, f: {uk: 'Обрив стрижнів — бічні смуги ±3,3 Гц біля 1×.', en: 'Broken bars — ±3.3 Hz sidebands around 1×.'}, v: ['M_DE', 'M_NDE']},
+  'motor.key': {r: {uk: 'Шпонка 12×8 під напівмуфту двигуна.', en: '12×8 key for the motor coupling half.'}},
+  'motor.bearing_de': {r: {uk: 'Передній підшипник двигуна (з боку муфти).', en: 'Motor drive-end bearing (coupling side).'}, s: MBEAR, v: ['M_DE']},
+  'motor.bearing_nde': {r: {uk: 'Задній підшипник двигуна (з боку вентилятора).', en: 'Motor non-drive-end bearing (fan side).'}, s: MBEAR, v: ['M_NDE']},
+  'motor.shield_de': {r: {uk: 'Передній підшипниковий щит двигуна.', en: 'Motor drive-end shield.'}},
+  'motor.shield_nde': {r: {uk: 'Задній підшипниковий щит двигуна.', en: 'Motor non-drive-end shield.'}},
+  'motor.fan': {r: {uk: 'Вентилятор охолодження на задньому кінці вала.', en: 'Cooling fan on the rear shaft end.'}, f: {uk: 'Зламана лопать — дисбаланс з боку NDE.', en: 'A broken blade — unbalance on the NDE side.'}, v: ['M_NDE']},
+  'motor.fan_cover': {r: {uk: 'Кожух вентилятора з решіткою. Забита решітка — перегрів двигуна.', en: 'Fan cover with a grille. A clogged grille overheats the motor.'}},
+  'motor.terminal_box': {r: {uk: 'Клемна коробка. Перед будь-якими роботами живлення вимикають у двох місцях (РЕ п. 4.3.6.1).', en: 'Terminal box. Before any work the power is isolated in two places (manual §4.3.6.1).'}},
+  'motor.eyebolt': {r: {uk: 'Рим-болт — тільки для підйому двигуна, не всього агрегату (РЕ п. 2.1.2).', en: 'Eyebolt — for lifting the motor only, never the whole unit (manual §2.1.2).'}},
+  'motor.nameplate': {r: {uk: 'Табличка: АИР160S2, 15 кВт, 2940 об/хв, 380/660 В.', en: 'Nameplate: AIR160S2, 15 kW, 2940 rpm, 380/660 V.'}},
+  'frame.base': {r: {uk: 'Зварна рама зі швелера 900×280 мм, 4 фундаментні болти, висота осі агрегату 248 мм. Фундамент має важити не менше ніж 4 агрегати (РЕ п. 2.1.4).', en: 'Welded channel frame 900×280 mm, 4 anchor bolts, unit shaft height 248 mm. The foundation should weigh at least 4 times the unit (manual §2.1.4).'}, f: {uk: 'Тріщини, зруйнована підливка, ослаблені фундаментні болти — ослаблення й резонанс.', en: 'Cracks, broken grout, loose anchor bolts — looseness and resonance.'}, v: ['P_DE', 'M_DE'], p: ['align']},
+  'frame.shims': {r: {uk: 'Підкладки під лапами двигуна — ними виставляють центрування по висоті.', en: 'Shims under the motor feet — they set the vertical alignment.'}, p: ['align']},
+  'frame.bolts_pump': {r: {uk: 'Болти М12 лап корпусу й кронштейна.', en: 'M12 bolts of the casing and bracket feet.'}, p: ['align']},
+  'frame.bolts_motor': {r: {uk: 'Болти М14 лап двигуна. Затягують хрестом після центрування.', en: 'M14 motor foot bolts. Tightened crosswise after alignment.'}, p: ['align', 'bush']},
+  'frame.anchors': {r: {uk: 'Фундаментні болти М16 у колодязях, залитих розчином.', en: 'M16 anchor bolts in grouted pockets.'}}
+};
+
+// ===================================================================== data: sensor points
+const SENSORS = [
+  {id: 'P_DE', pr: 1, uk: 'Насос, з боку муфти', en: 'Pump, coupling side',
+   where: {uk: 'Зверху на корпусі підшипників кронштейна, над підшипником 306 з боку муфти.', en: 'On top of the bracket bearing housing, over the coupling-side 306 bearing.'},
+   axes: {uk: 'X — осьова, Y — горизонтальна, Z — вертикальна', en: 'X axial, Y horizontal, Z vertical'},
+   sees: {uk: 'Розцентрування й знос муфти (осьова 1× і 2×), підшипник 306, ослаблення лапи кронштейна, дисбаланс колеса.', en: 'Misalignment and coupling wear (axial 1× and 2×), the 306 bearing, a loose bracket foot, impeller unbalance.'}},
+  {id: 'P_NDE', pr: 2, uk: 'Насос, з боку колеса', en: 'Pump, impeller side',
+   where: {uk: 'Збоку на корпусі підшипників, ближче до колеса.', en: 'On the side of the bearing housing, nearer the impeller.'},
+   axes: {uk: 'X — осьова, Y — вертикальна, Z — горизонтальна', en: 'X axial, Y vertical, Z horizontal'},
+   sees: {uk: 'Дисбаланс і стан колеса (горизонтальна 1×), підшипник з боку колеса, гідравлічні збурення; температура біля сальника.', en: 'Impeller unbalance and condition (horizontal 1×), the impeller-side bearing, hydraulic disturbance; temperature near the packing.'}},
+  {id: 'M_DE', pr: 1, uk: 'Двигун, передній підшипник', en: 'Motor, drive end',
+   where: {uk: 'Збоку станини біля переднього щита, на площадці між ребрами.', en: 'On the side of the frame next to the drive-end shield, on a pad between the fins.'},
+   axes: {uk: 'X — осьова, Y — вертикальна, Z — горизонтальна', en: 'X axial, Y vertical, Z horizontal'},
+   sees: {uk: 'Підшипник двигуна DE, розцентрування з боку двигуна, електричні дефекти (100 Гц), м’яка лапа двигуна.', en: 'Motor DE bearing, misalignment on the motor side, electrical faults (100 Hz), motor soft foot.'}},
+  {id: 'M_NDE', pr: 2, uk: 'Двигун, задній підшипник', en: 'Motor, non-drive end',
+   where: {uk: 'Збоку станини біля заднього щита.', en: 'On the side of the frame next to the non-drive-end shield.'},
+   axes: {uk: 'X — осьова, Y — вертикальна, Z — горизонтальна', en: 'X axial, Y vertical, Z horizontal'},
+   sees: {uk: 'Підшипник двигуна NDE, дисбаланс вентилятора, ослаблення задніх лап, електричні дефекти.', en: 'Motor NDE bearing, fan unbalance, loose rear feet, electrical faults.'}}
+];
+
+// ===================================================================== data: faults
+const F1 = 48.3;
+const FAULTS = [
+  {id: 'unbal', sev: 'warn', cov: 'full', sens: ['P_NDE', 'P_DE'], parts: ['rotor.impeller'], proc: 'ring', cam: 'pump', clip: true,
+   peaks: [[F1, 1, '1×'], [96.7, .12, '2×']],
+   t: {uk: 'Дисбаланс робочого колеса', en: 'Impeller unbalance'},
+   signs: {uk: 'Висока 1× (48 Гц) у радіальних напрямках, горизонтальна зазвичай більша; осьова мала. Росте поступово (відкладення, ерозія) або стрибком (відламалась частина лопаті).', en: 'High 1× (48 Hz) in the radial directions, horizontal usually higher; axial is low. Grows slowly (deposits, erosion) or jumps (a piece of a vane broke off).'},
+   read: {uk: 'Дивіться 1× на P-NDE по горизонталі. Якщо 1× дає понад 80 % загальної вібрації, а 2× мала — це дисбаланс, а не розцентрування.', en: 'Watch horizontal 1× at P-NDE. If 1× is over 80 % of the overall level and 2× is small, it is unbalance, not misalignment.'},
+   causes: {uk: 'Накип чи бруд на колесі, ерозія, кавітація, зламана лопать, колесо не збалансоване після ремонту.', en: 'Scale or dirt on the impeller, erosion, cavitation, a broken vane, no balancing after repair.'},
+   todo: {uk: 'Зупинити й оглянути колесо (процедура «Колесо і щілинне кільце»). Після наплавлення чи заміни — балансувати (типово клас G6.3).', en: 'Stop and inspect the impeller ("Impeller and wear ring" procedure). After repair or replacement — balance it (typically grade G6.3).'}},
+  {id: 'misal', sev: 'crit', cov: 'full', sens: ['P_DE', 'M_DE'], parts: ['coupling.half_pump', 'coupling.half_motor', 'frame.shims', 'frame.bolts_motor'], proc: 'align', cam: 'coupling',
+   peaks: [[F1, .55, '1×'], [96.7, .85, '2×'], [145, .3, '3×']],
+   t: {uk: 'Розцентрування насоса й двигуна', en: 'Pump-to-motor misalignment'},
+   signs: {uk: 'Висока осьова вібрація на 1× і 2× з обох боків муфти, 2× часто вища за 1×. Підшипники біля муфти гріються, гумові втулки зношуються швидше.', en: 'High axial vibration at 1× and 2× on both sides of the coupling, 2× often above 1×. Bearings near the coupling run hot, bushings wear faster.'},
+   read: {uk: 'Порівняйте осьову X на P-DE і M-DE: якщо вона понад половину радіальної і є сильна 2× — центруйте.', en: 'Compare axial X at P-DE and M-DE: if it is above half of the radial level and 2× is strong — align.'},
+   causes: {uk: 'Агрегат не відцентрували після монтажу чи ремонту, просіла рама, тягнуть труби, м’яка лапа, теплове розширення.', en: 'No alignment after installation or repair, a sagging frame, pipe strain, a soft foot, thermal growth.'},
+   todo: {uk: 'Процедура «Центрування». Допуск за РЕ — розбіжність показів індикатора не більше 0,12 мм.', en: '"Alignment" procedure. Manual tolerance — dial indicator spread of 0.12 mm max.'}},
+  {id: 'coupl', sev: 'warn', cov: 'part', sens: ['P_DE', 'M_DE'], parts: ['coupling.bushings', 'coupling.pins'], proc: 'bush', cam: 'coupling',
+   peaks: [[F1, .4, '1×'], [96.7, .5, '2×'], [145, .35, '3×'], [290, .4, '6×', 1]],
+   t: {uk: 'Знос пружних втулок муфти', en: 'Worn coupling bushings'},
+   signs: {uk: 'Ріст 2× і 3×, поштовхи на пуску, гумовий пил під огородженням. Частота проходу пальців 6× = 290 Гц — поза смугою Flowbit E.', en: 'Rising 2× and 3×, knocks at start-up, rubber dust under the guard. Pin pass frequency 6× = 290 Hz — outside the Flowbit E band.'},
+   read: {uk: 'Якщо після центрування 2× повертається за кілька тижнів — перевірте втулки.', en: 'If 2× comes back within weeks after alignment — check the bushings.'},
+   causes: {uk: 'Старіння гуми, розцентрування, часті пуски, мастило на гумі.', en: 'Aged rubber, misalignment, frequent starts, oil on the rubber.'},
+   todo: {uk: 'Процедура «Заміна втулок муфти», потім перевірити центрування.', en: '"Coupling bushings" procedure, then check the alignment.'}},
+  {id: 'loose', sev: 'warn', cov: 'full', sens: ['P_DE', 'M_DE', 'M_NDE'], parts: ['frame.bolts_pump', 'frame.bolts_motor', 'pump.foot', 'frame.base', 'frame.anchors'], proc: 'align', cam: 'all',
+   peaks: [[24.2, .2, '½×'], [F1, .6, '1×'], [96.7, .45, '2×'], [145, .35, '3×'], [193, .22, '4×', 1]],
+   t: {uk: 'Ослаблення кріплення, «м’яка лапа»', en: 'Looseness, soft foot'},
+   signs: {uk: 'Ряд гармонік 1×, 2×, 3×…, інколи ½×. Вертикальна вібрація біля ослабленої лапи помітно більша, ніж в інших точках.', en: 'A row of harmonics 1×, 2×, 3×…, sometimes ½×. Vertical vibration near the loose foot is clearly above the other points.'},
+   read: {uk: 'Порівняйте вертикальну складову по точках: найбільша — там, де ослаблення.', en: 'Compare the vertical component across the points: the highest is where the looseness is.'},
+   causes: {uk: 'Ослаблені болти лап чи фундаментні болти, тріщина рами, зруйнована підливка, лапа не прилягає.', en: 'Loose foot or anchor bolts, a cracked frame, broken grout, a foot that does not sit flat.'},
+   todo: {uk: 'Перевірити затяжку й м’яку лапу (крок 3 процедури «Центрування»). Тріщини рами заварити, підливку відновити.', en: 'Check bolt torque and soft foot (step 3 of "Alignment"). Weld frame cracks, restore the grout.'}},
+  {id: 'bearp', sev: 'crit', cov: 'part', sens: ['P_DE', 'P_NDE'], parts: ['pump.bearing_de', 'pump.bearing_nde', 'pump.grease_nipples'], proc: 'bear', cam: 'bracket', clip: true, noise: 'hf',
+   peaks: [[18.6, .12, 'FTF'], [F1, .25, '1×'], [100, .18, 'BSF'], [149, .6, 'BPFO'], [237.5, .35, 'BPFI', 1]],
+   t: {uk: 'Підшипник насоса: знос або нестача мастила', en: 'Pump bearing: wear or poor lubrication'},
+   signs: {uk: 'Спершу ростуть шум і температура; далі з’являються піки дефекту: зовнішнє кільце 149 Гц, кульки 100 Гц, внутрішнє кільце 238 Гц (поза смугою E). Поряд 3× = 145 Гц — не плутати.', en: 'Noise and temperature rise first; then defect peaks appear: outer race 149 Hz, balls 100 Hz, inner race 238 Hz (outside the E band). 3× = 145 Hz is close — do not mix them up.'},
+   read: {uk: '145 і 149 Гц розрізняються з роздільністю 0,78 Гц у Flowbit E. Температура понад 90 °C або на 50 °C вища за повітря — аварійна зупинка (РЕ).', en: '145 and 149 Hz are separated by the 0.78 Hz resolution of Flowbit E. Temperature above 90 °C or 50 °C over ambient — emergency stop (manual).'},
+   causes: {uk: 'Пропущене змащування (Літол-24: 100 год у перший місяць, далі кожні 1000 год), вода чи бруд через зношену манжету, розцентрування, пошкодження при посадці.', en: 'Missed greasing (Litol-24: 100 h in the first month, then every 1000 h), water or dirt through a worn lip seal, misalignment, damage when fitting.'},
+   todo: {uk: 'Додати мастило. Якщо температура й шум не падають — процедура «Заміна підшипників 306».', en: 'Add grease. If temperature and noise stay up — "Replace 306 bearings" procedure.'}},
+  {id: 'bearm', sev: 'crit', cov: 'part', sens: ['M_DE', 'M_NDE'], parts: ['motor.bearing_de', 'motor.bearing_nde'], proc: null, cam: 'motor', clip: true, noise: 'hf',
+   peaks: [[18.4, .1, 'FTF'], [94.5, .15, 'BSF'], [146.7, .55, 'BPFO'], [239.8, .3, 'BPFI', 1]],
+   t: {uk: 'Підшипник двигуна', en: 'Motor bearing'},
+   signs: {uk: 'Те саме, що в насоса, але на точках двигуна. Частоти 6309 близькі до 306 (BPFO ≈ 147 Гц), тому джерело визначають за тим, де пік більший.', en: 'Same as the pump, but at the motor points. 6309 frequencies are close to the 306 (BPFO ≈ 147 Hz), so the source is the point with the bigger peak.'},
+   read: {uk: 'Пік BPFO найбільший на M-DE — винен підшипник двигуна, а не насоса.', en: 'BPFO highest at M-DE — the motor bearing is at fault, not the pump.'},
+   causes: {uk: 'Вироблений ресурс, перегрів, струми через підшипник при роботі від перетворювача частоти.', en: 'End of life, overheating, bearing currents when fed from a frequency inverter.'},
+   todo: {uk: 'Заміна підшипників двигуна — за документацією двигуна або в електроремонтній службі; після ремонту — центрування.', en: 'Replace the motor bearings per the motor documentation or at a motor repair shop; align afterwards.'}},
+  {id: 'cav', sev: 'crit', cov: 'weak', sens: ['P_NDE'], parts: ['rotor.impeller', 'pump.wear_ring', 'pump.casing'], proc: 'ring', cam: 'pump', clip: true, noise: 'broad',
+   peaks: [[F1, .35, '1×']],
+   t: {uk: 'Кавітація', en: 'Cavitation'},
+   signs: {uk: 'Шум, ніби в насосі гравій; тремтить стрілка манометра; падає напір. У спектрі — широкосмуговий шум до кількох кГц, 1× нестабільна.', en: 'A noise like gravel inside the pump, the gauge needle trembles, head drops. Broadband noise up to several kHz, unsteady 1×.'},
+   read: {uk: 'Flowbit E бачить лише ріст шумового «дна» й нестабільну 1×; надійно кавітацію ловить широкосмуговий Flowbit W. Перевірте розрідження на вході.', en: 'Flowbit E only sees a raised noise floor and an unsteady 1×; the wideband Flowbit W catches cavitation reliably. Check the suction vacuum.'},
+   causes: {uk: 'Прикрита засувка на вході, забитий фільтр, мала висота всмоктування, завелика подача. Допустимий кавітаційний запас — 3,5 м.', en: 'A throttled suction valve, a clogged strainer, low suction head, too much flow. Required NPSH — 3.5 m.'},
+   todo: {uk: 'Повністю відкрити засувку на вході, прочистити фільтр, зменшити подачу засувкою на виході (РЕ, табл. 6). Колесо оглянути на раковини.', en: 'Open the suction valve fully, clean the strainer, reduce flow with the discharge valve (manual, table 6). Inspect the impeller for pitting.'}},
+  {id: 'ring', sev: 'warn', cov: 'weak', sens: [], parts: ['pump.wear_ring', 'rotor.impeller'], proc: 'ring', cam: 'pump', clip: true,
+   peaks: [[F1, .3, '1×'], [290, .35, '6×', 1]],
+   t: {uk: 'Знос щілинного кільця', en: 'Wear ring wear'},
+   signs: {uk: 'Напір поступово падає при тій самій подачі, струм росте. Вібрація змінюється мало; лопатева частота 6× = 290 Гц — поза смугою E.', en: 'Head slowly drops at the same flow and current rises. Vibration barely changes; vane pass 6× = 290 Hz is outside the E band.'},
+   read: {uk: 'Тут головне — манометр і струм. Граничний стан за РЕ — напір нижчий за номінальний більш ніж на 10 %.', en: 'The gauge and current matter most here. Limit state per the manual — head more than 10 % below nominal.'},
+   causes: {uk: 'Абразив у воді (дозволено до 0,1 % частинок до 0,2 мм), кавітація, тертя колеса об кільце.', en: 'Abrasives in the water (up to 0.1 % of particles up to 0.2 mm allowed), cavitation, the impeller rubbing the ring.'},
+   todo: {uk: 'Процедура «Колесо і щілинне кільце».', en: '"Impeller and wear ring" procedure.'}},
+  {id: 'pack', sev: 'warn', cov: 'part', sens: ['P_NDE'], parts: ['seal.packing', 'seal.sleeve', 'seal.gland'], proc: 'pack', cam: 'seal', clip: true, temp: 1,
+   peaks: [[F1, .3, '1×']],
+   t: {uk: 'Перегрів або сильний витік сальника', en: 'Packing overheating or heavy leak'},
+   signs: {uk: 'Витік струменем або, навпаки, сухий гарячий сальник, пара, запах горілого. Вібрація майже не змінюється.', en: 'A jet of water or, the opposite, a dry hot packing, steam, a burning smell. Vibration barely changes.'},
+   read: {uk: 'Flowbit бачить лише ріст температури біля кронштейна: порівнюйте P-NDE з P-DE — сальник гріє бік колеса.', en: 'Flowbit only sees the temperature rise at the bracket: compare P-NDE with P-DE — the packing heats the impeller side.'},
+   causes: {uk: 'Набивка спрацювалась, перетягнута чи перекошена кришка, борозни на втулці, бруд у воді, суха робота.', en: 'Worn packing, an over-tight or cocked gland, grooves on the sleeve, dirty water, dry running.'},
+   todo: {uk: 'Процедура «Заміна сальникової набивки». Підтягувати гайки тільки на зупиненому агрегаті (РЕ п. 3.7.9).', en: '"Repack the gland" procedure. Tighten the nuts only with the unit stopped (manual §3.7.9).'}},
+  {id: 'elec', sev: 'warn', cov: 'full', sens: ['M_DE', 'M_NDE'], parts: ['motor.winding', 'motor.stator', 'motor.rotor'], proc: null, cam: 'motor', clip: true,
+   peaks: [[45, .18, '−fp'], [F1, .5, '1×'], [51.6, .18, '+fp'], [100, .55, '2×fм']],
+   t: {uk: 'Електричні несправності двигуна', en: 'Motor electrical faults'},
+   signs: {uk: 'Пік 100 Гц (двічі частота мережі) — статор чи несиметрія живлення; бічні смуги ±3,3 Гц біля 1× — пошкоджені стрижні ротора.', en: 'A 100 Hz peak (twice line frequency) — stator or supply unbalance; ±3.3 Hz sidebands at 1× — damaged rotor bars.'},
+   read: {uk: 'Електричні складові зникають тієї ж миті, коли знімають живлення; механічні затухають разом з обертами. 100 Гц і 2× = 96,7 Гц Flowbit E розрізняє.', en: 'Electrical components vanish the instant power is cut; mechanical ones fade with the speed. Flowbit E separates 100 Hz from 2× = 96.7 Hz.'},
+   causes: {uk: 'Перекіс напруги, міжвиткове замикання, обрив стрижня ротора, ексцентриситет повітряного зазору.', en: 'Voltage unbalance, a turn-to-turn short, a broken rotor bar, air-gap eccentricity.'},
+   todo: {uk: 'Перевірити напругу й струми по фазах, ізоляцію мегомметром 500 В (не менше 1 МОм за РЕ); ремонт — в електроремонтній службі.', en: 'Check voltage and current per phase, insulation with a 500 V megger (at least 1 MΩ per the manual); repair at a motor shop.'}},
+  {id: 'closed', sev: 'warn', cov: 'part', sens: ['P_NDE'], parts: ['pump.casing', 'rotor.impeller'], proc: null, cam: 'pump', noise: 'low', temp: 1,
+   peaks: [[F1, .4, '1×']],
+   t: {uk: 'Робота на закриту засувку', en: 'Running against a closed valve'},
+   signs: {uk: 'Вода в насосі швидко гріється, з’являється низькочастотний гул і нестабільна 1×.', en: 'The water in the pump heats up fast, a low-frequency rumble and an unsteady 1× appear.'},
+   read: {uk: 'Flowbit бачить ріст температури й широкий шум на низьких частотах одразу після пуску. За РЕ на закриту засувку можна працювати не довше 2 хвилин.', en: 'Flowbit sees rising temperature and broad low-frequency noise right after start-up. Per the manual, no more than 2 minutes against a closed valve.'},
+   causes: {uk: 'Засувку не відкрили після пуску, закрився зворотний клапан, засмічена напірна лінія.', en: 'The valve was not opened after start-up, a check valve stuck closed, a blocked discharge line.'},
+   todo: {uk: 'Відкрити засувку на виході. Якщо насос перегрівся — зупинити, дати охолонути, перевірити сальник.', en: 'Open the discharge valve. If the pump overheated — stop it, let it cool, check the packing.'}}
+];
+
+// ===================================================================== data: views and procedures
+// positions in mm in the model frame: x along the shaft (suction face 0), y lateral (sensor side negative), z up (floor 0)
+const VIEWS = {
+  all: {t: [580, 0, 250], d: [-0.52, -0.75, 0.41], r: 2.35},
+  front: {t: [580, 0, 250], d: [0, -1, 0.16], r: 2.25},
+  top: {t: [580, 0, 200], d: [0.001, -0.02, 1], r: 2.2},
+  end: {t: [400, 0, 250], d: [-1, -0.3, 0.3], r: 1.5},
+  pump: {t: [130, 0, 250], d: [-0.55, -0.72, 0.42], r: 1.0},
+  seal: {t: [200, 0, 250], d: [0.08, -1, 0.3], r: 0.62},
+  bracket: {t: [320, 0, 260], d: [-0.1, -1, 0.42], r: 0.85},
+  coupling: {t: [505, 0, 250], d: [0.15, -1, 0.35], r: 0.7},
+  motor: {t: [840, 0, 260], d: [0.3, -1, 0.42], r: 1.3},
+  feet: {t: [800, 0, 120], d: [0.25, -1, 0.3], r: 1.05},
+  coupTop: {t: [520, 0, 250], d: [0.01, -0.25, 1], r: 0.95},
+  wide: {t: [700, 0, 420], d: [-0.15, -1, 0.3], r: 2.7},
+  shelf: {t: [430, 0, 520], d: [-0.1, -1, 0.25], r: 1.9},
+  imp: {t: [250, 0, 450], d: [-0.6, -0.75, 0.3], r: 0.7}
+};
+const VIEW_CYCLE = ['all', 'front', 'top', 'end'];
+
+const GROUPSETS = {
+  '@motor': ['motor.frame', 'motor.stator', 'motor.winding', 'motor.rotor', 'motor.key', 'motor.bearing_de', 'motor.bearing_nde', 'motor.shield_de', 'motor.shield_nde', 'motor.fan', 'motor.fan_cover', 'motor.terminal_box', 'motor.eyebolt', 'motor.nameplate', 'coupling.half_motor', 'sensor.M_DE', 'sensor.M_NDE', 'frame.bolts_motor'],
+  '@assy': ['pump.bracket', 'pump.foot', 'pump.cover', 'pump.cover_front', 'pump.cover_rear', 'pump.bearing_nde', 'pump.bearing_de', 'pump.grease_nipples', 'pump.temp_ports', 'pump.bolts_covers', 'seal.lips', 'seal.sleeve', 'seal.packing', 'seal.gland', 'seal.studs', 'rotor.impeller', 'rotor.impeller_nut', 'rotor.key_impeller', 'rotor.shaft', 'sensor.P_DE', 'sensor.P_NDE'],
+  '@cpump': ['coupling.half_pump', 'coupling.pins', 'coupling.bushings', 'rotor.key_coupling'],
+  '@seal': ['seal.studs', 'seal.gland', 'seal.packing']
+};
+const expand = list => (list || []).flatMap(x => GROUPSETS[x] || [x]);
+
+const SAFE = {t: {uk: 'Зупинити й знеструмити', en: 'Stop and isolate'}, focus: ['motor.terminal_box', 'pump.plug_drain'], cam: 'all',
+  d: {uk: 'Зупинити агрегат. Вимкнути живлення двигуна у двох місцях і повісити табличку «Не вмикати». Закрити засувки на вході й виході, скинути тиск і злити воду через нижню пробку (РЕ п. 4.3.6.1–4.3.6.3).', en: 'Stop the unit. Isolate the motor power in two places and hang a "Do not switch on" tag. Close the suction and discharge valves, release the pressure and drain through the bottom plug (manual §4.3.6.1–4.3.6.3).'}};
+const GUARD = {t: {uk: 'Зняти огородження муфти', en: 'Remove the coupling guard'}, focus: ['coupling.guard'], set: {'coupling.guard': [0, 0, 330]}, cam: 'coupling',
+  d: {uk: 'Відкрутити кріплення й зняти огородження. Оглянути муфту: гумовий пил під огородженням — ознака зношених втулок.', en: 'Unbolt and lift off the guard. Look at the coupling: rubber dust under the guard means worn bushings.'}};
+const PULL = [
+  {t: {uk: 'Відсунути двигун', en: 'Move the motor away'}, focus: ['frame.bolts_motor'], set: {'@motor': [260, 0, 0]}, cam: 'wide',
+   d: {uk: 'Відкрутити 4 болти М14 лап двигуна й відсунути його разом із напівмуфтою. Підкладки під лапами не губити й не міняти місцями — вони знадобляться для центрування.', en: 'Undo the 4 M14 motor foot bolts and slide the motor away with its coupling half. Keep the shims under the feet in place and in order — they are needed for alignment.'}},
+  {t: {uk: 'Зняти напівмуфту насоса', en: 'Remove the pump coupling half'}, focus: ['@cpump'], set: {'@cpump': [100, 0, 240]}, cam: 'wide',
+   d: {uk: 'Зняти напівмуфту насоса з пальцями знімачем (не молотком) і вийняти шпонку.', en: 'Pull the pump coupling half with its pins using a puller (not a hammer) and take out the key.'}},
+  {t: {uk: 'Вийняти ротор назад', en: 'Pull the rotor out backwards'}, focus: ['pump.bolts_flange', 'pump.bracket'], set: {'@assy': [240, 0, 0], 'pump.bolts_flange': [120, 0, 230]}, cam: 'wide',
+   d: {uk: 'Відкрутити болти лапи кронштейна й 8 болтів М12 фланця. Віджимними гвинтами відокремити кронштейн разом із кришкою й колесом і вийняти назад. Корпус лишається на трубах (РЕ п. 4.3.6.7–4.3.6.8).', en: 'Undo the bracket foot bolts and the 8 M12 flange bolts. Separate the bracket with the cover and impeller using the jack screws and pull it out backwards. The casing stays on the pipes (manual §4.3.6.7–4.3.6.8).'}},
+  {t: {uk: 'Зняти колесо', en: 'Remove the impeller'}, focus: ['rotor.impeller_nut', 'rotor.impeller', 'rotor.key_impeller'], set: {'rotor.impeller_nut': [120, 0, 300], 'rotor.impeller': [150, 0, 210], 'rotor.key_impeller': [190, 0, 330]}, cam: 'shelf',
+   d: {uk: 'Відігнути стопорну шайбу, відкрутити гайку-обтічник, зняти колесо, вийняти шпонку (РЕ п. 4.3.6.9–4.3.6.10). Позначити положення деталей — міняти їх місцями не можна.', en: 'Bend back the tab washer, undo the cap nut, take off the impeller and the key (manual §4.3.6.9–4.3.6.10). Mark the parts — they must not be swapped.'}}
+];
+
+const PROCS = [
+  {id: 'pack', t: {uk: 'Заміна сальникової набивки', en: 'Repack the gland'}, when: {uk: 'Сильний витік, сухий гарячий сальник, кришку вже нікуди тягнути.', en: 'Heavy leak, a dry hot packing, no take-up left on the gland.'}, steps: [
+    SAFE,
+    {t: {uk: 'Відпустити кришку сальника', en: 'Release the gland'}, focus: ['seal.studs', 'seal.gland'], set: {'seal.gland': [24, 0, 0]}, cam: 'seal', clip: true,
+     d: {uk: 'Через вікно кронштейна відкрутити гайки двох шпильок М10 і відвести кришку сальника по валу до упору.', en: 'Through the bracket window undo the nuts of the two M10 studs and slide the gland back along the shaft.'}},
+    {t: {uk: 'Вийняти старі кільця', en: 'Pull out the old rings'}, focus: ['seal.packing'], set: {'seal.packing': [40, 0, 175]}, cam: 'seal', clip: true,
+     d: {uk: 'Гачком-екстрактором вийняти всі 4 кільця. Не дряпати втулку вала й стінки камери.', en: 'Pull all 4 rings with a packing extractor. Do not scratch the sleeve or the box walls.'}},
+    {t: {uk: 'Оглянути захисну втулку', en: 'Inspect the shaft sleeve'}, focus: ['seal.sleeve'], cam: 'seal', clip: true,
+     d: {uk: 'Очистити камеру. Якщо на втулці кільцеві борозни чи сходинка — нова набивка не втримає: втулку міняють (часткове розбирання, як у процедурі «Заміна підшипників 306», кроки 3–7).', en: 'Clean the box. Circular grooves or a step on the sleeve mean new packing will not seal: replace the sleeve (partial dismantling as in "Replace 306 bearings", steps 3–7).'}},
+    {t: {uk: 'Нарізати нові кільця', en: 'Cut new rings'}, focus: ['seal.packing'], cam: 'seal', clip: true,
+     d: {uk: 'Шнур 8×8 (ХБП-31 або АП-31) намотати на оправку Ø35 — діаметр втулки — і нарізати 4 кільця косим різом під 45°. Кільце має сходитися без зазору й без нахлесту.', en: 'Wrap 8×8 braid (KhBP-31 or AP-31) round a Ø35 mandrel — the sleeve diameter — and cut 4 rings with a 45° skive cut. Each ring must close with no gap and no overlap.'}},
+    {t: {uk: 'Укласти кільця по одному', en: 'Fit the rings one by one'}, focus: ['seal.packing'], set: {'seal.packing': [0, 0, 0]}, cam: 'seal', clip: true,
+     d: {uk: 'Кожне кільце досилати в камеру окремо розрізною втулкою. Стики сусідніх кілець зміщувати на 90°.', en: 'Push each ring home separately with a split bush. Stagger the joints of neighbouring rings by 90°.'}},
+    {t: {uk: 'Затягнути кришку', en: 'Tighten the gland'}, focus: ['seal.gland', 'seal.studs'], set: {'seal.gland': [0, 0, 0]}, cam: 'seal', clip: true,
+     d: {uk: 'Поставити кришку сальника, затягнути гайки рукою рівномірно, потім ключем стиснути набивку приблизно на 10 % її висоти. Кришка не повинна перекошуватись.', en: 'Fit the gland, run the nuts down evenly by hand, then compress the packing by about 10 % of its height with a spanner. The gland must stay square.'}},
+    {t: {uk: 'Пуск і доведення', en: 'Start-up and run-in'}, focus: ['seal.gland'], cam: 'bracket', spin: true,
+     d: {uk: 'Провернути вал рукою — має йти вільно. Пустити насос: витік має бути крапельним, а не струменем. Підтягувати по пів грані на зупиненому агрегаті, не частіше ніж раз на 15 хв, поки витік не стабілізується. Сухий сальник — це перегрів і знос втулки.', en: 'Turn the shaft by hand — it must turn freely. Start the pump: the leak must drip, not jet. Tighten half a flat with the unit stopped, no more than once per 15 min, until the leak settles. A dry packing means heat and sleeve wear.'}},
+    {t: {uk: 'Контроль у Flowbit', en: 'Check in Flowbit'}, focus: ['sensor.P_NDE'], cam: 'bracket', spin: true,
+     d: {uk: 'Наступну добу стежити за температурою на P-NDE: після притирання набивки вона має стабілізуватися. Записати заміну в журнал.', en: 'For the next day watch the temperature at P-NDE: once the packing beds in it must settle. Log the repack.'}}
+  ]},
+  {id: 'bear', t: {uk: 'Заміна підшипників 306', en: 'Replace the 306 bearings'}, when: {uk: 'Ріст BPFO/шуму й температури, нагрів понад 90 °C, вода в мастилі.', en: 'Rising BPFO/noise and temperature, above 90 °C, water in the grease.'}, steps: [
+    SAFE, GUARD, ...PULL,
+    {t: {uk: 'Зняти кришку корпусу й сальник', en: 'Remove the cover and packing'}, focus: ['pump.cover', 'seal.sleeve', '@seal'], set: {'pump.cover': [90, 0, 340], 'seal.studs': [90, 0, 340], 'seal.packing': [150, 0, 450], 'seal.gland': [205, 0, 420], 'seal.sleeve': [250, 0, 500]}, cam: 'shelf',
+     d: {uk: 'Зняти кришку корпусу із сальниковою камерою, вийняти набивку, зняти кришку сальника й захисну втулку.', en: 'Take off the casing cover with the stuffing box, remove the packing, the gland and the shaft sleeve.'}},
+    {t: {uk: 'Зняти кришки підшипників', en: 'Remove the bearing covers'}, focus: ['pump.cover_front', 'pump.cover_rear', 'pump.bolts_covers', 'seal.lips'], set: {'pump.cover_front': [160, 0, 560], 'pump.cover_rear': [430, 0, 330], 'pump.bolts_covers': [330, 0, 600], 'seal.lips': [310, 0, 640]}, cam: 'shelf',
+     d: {uk: 'Відкрутити болти М8 і зняти обидві кришки підшипників із манжетами.', en: 'Undo the M8 bolts and remove both bearing covers with their lip seals.'}},
+    {t: {uk: 'Вийняти вал із підшипниками', en: 'Withdraw the shaft with bearings'}, focus: ['rotor.shaft', 'pump.bearing_nde', 'pump.bearing_de'], set: {'rotor.shaft': [270, 0, 720], 'pump.bearing_nde': [270, 0, 720], 'pump.bearing_de': [270, 0, 720]}, cam: 'shelf',
+     d: {uk: 'Вийняти вал разом із підшипниками з корпусу підшипників у бік муфти.', en: 'Withdraw the shaft with both bearings out of the housing towards the coupling end.'}},
+    {t: {uk: 'Зняти старі підшипники', en: 'Pull off the old bearings'}, focus: ['pump.bearing_nde', 'pump.bearing_de'], set: {'pump.bearing_nde': [170, 0, 840], 'pump.bearing_de': [400, 0, 840]}, cam: 'shelf',
+     d: {uk: 'Зняти підшипники знімачем, упираючи його у внутрішнє кільце. Оглянути посадки вала Ø30 і корпусу Ø72: задири чи знос — вал або кронштейн у ремонт.', en: 'Pull the bearings with a puller bearing on the inner ring. Check the Ø30 shaft seats and Ø72 housing bores: scoring or wear sends the shaft or bracket to repair.'}},
+    {t: {uk: 'Нагріти й посадити нові', en: 'Heat and fit the new ones'}, focus: ['pump.bearing_nde', 'pump.bearing_de'], hot: ['pump.bearing_nde', 'pump.bearing_de'], set: {'pump.bearing_nde': [270, 0, 720], 'pump.bearing_de': [270, 0, 720]}, cam: 'shelf',
+     d: {uk: 'Нагріти нові підшипники 306 до 80–90 °C індукційним нагрівачем або в масляній ванні й посадити на вал до упору в бурт. Не бити по зовнішньому кільцю.', en: 'Heat the new 306 bearings to 80–90 °C with an induction heater or in an oil bath and push them onto the shaft against the shoulder. Never hit the outer ring.'}},
+    {t: {uk: 'Мастило й манжети', en: 'Grease and lip seals'}, focus: ['pump.bearing_nde', 'pump.bearing_de', 'seal.lips', 'pump.grease_nipples'], cam: 'shelf',
+     d: {uk: 'Заповнити підшипникові вузли мастилом Літол-24 (за РЕ — 0,04 кг на насос). Поставити нові манжети в кришки.', en: 'Pack the bearing housings with Litol-24 (0.04 kg per pump per the manual). Fit new lip seals in the covers.'}},
+    {t: {uk: 'Зібрати насос', en: 'Reassemble the pump'}, focus: ['rotor.impeller', 'pump.cover'], set: {'*': 0, 'coupling.guard': [0, 0, 330], '@motor': [260, 0, 0]}, cam: 'pump', clip: true,
+     d: {uk: 'Зібрати у зворотному порядку. Зазор між колесом і кришкою — 3 ± 0,5 мм; вал має провертатися рукою вільно. Болти кронштейна затягувати хрестом.', en: 'Reassemble in reverse order. Impeller-to-cover gap 3 ± 0.5 mm; the shaft must turn freely by hand. Tighten the bracket bolts crosswise.'}},
+    {t: {uk: 'Повернути двигун і відцентрувати', en: 'Return the motor and align'}, focus: ['coupling.half_pump', 'coupling.half_motor'], set: {'@motor': [0, 0, 0]}, cam: 'coupling', link: 'align',
+     d: {uk: 'Поставити двигун на його підкладки, з’єднати муфту й відцентрувати агрегат.', en: 'Set the motor back on its shims, join the coupling and align the unit.'}},
+    {t: {uk: 'Пробний пуск і еталон', en: 'Test run and baseline'}, focus: ['sensor.P_DE', 'sensor.P_NDE'], set: {'coupling.guard': [0, 0, 0]}, cam: 'all', spin: true,
+     d: {uk: 'Поставити огородження. Перший пуск на 2–3 с — перевірити напрям обертання; потім 4–5 хв — шум, вібрація, нагрів. Після обкатки (72 год) записати у Flowbit новий еталон.', en: 'Refit the guard. First start for 2–3 s — check the direction; then 4–5 min — noise, vibration, heat. After the run-in (72 h) save a new baseline in Flowbit.'}}
+  ]},
+  {id: 'align', t: {uk: 'Центрування насоса й двигуна', en: 'Pump-to-motor alignment'}, when: {uk: 'Після монтажу, будь-якого ремонту з переміщенням двигуна, при високій осьовій 1× і 2×.', en: 'After installation, after any repair that moves the motor, at high axial 1× and 2×.'}, steps: [
+    SAFE, GUARD,
+    {t: {uk: 'Перевірити «м’яку лапу»', en: 'Check for soft foot'}, focus: ['frame.bolts_motor', 'frame.shims'], cam: 'feet',
+     d: {uk: 'По черзі відпускати кожен болт лапи двигуна з індикатором на лапі. Якщо лапа піднімається більше ніж приблизно на 0,05 мм — підкласти шиму саме під цю лапу.', en: 'Loosen each motor foot bolt in turn with a dial indicator on the foot. If the foot lifts more than about 0.05 mm, shim that foot.'}},
+    {t: {uk: 'Поставити індикатори', en: 'Set up the indicators'}, focus: ['coupling.half_pump', 'coupling.half_motor'], cam: 'coupling',
+     d: {uk: 'Закріпити пристосування з індикатором (ціна поділки 0,01 мм) на напівмуфті насоса: одна ніжка — на ободі напівмуфти двигуна (радіальне зміщення), друга — на торці (кутове).', en: 'Clamp the fixture with a dial indicator (0.01 mm resolution) on the pump half: one plunger on the rim of the motor half (offset), the other on its face (angle).'}},
+    {t: {uk: 'Зняти покази', en: 'Take readings'}, focus: ['coupling.half_pump', 'coupling.half_motor'], cam: 'coupling', spin: true,
+     d: {uk: 'Провертати обидва вали разом і записувати покази в положеннях 0°, 90°, 180°, 270°. Розбіжність радіальних показів — не більше 0,12 мм (РЕ п. 2.3.10); краще тримати близько 0,05 мм.', en: 'Turn both shafts together and read at 0°, 90°, 180° and 270°. Radial spread — 0.12 mm max (manual §2.3.10); aim for about 0.05 mm.'}},
+    {t: {uk: 'Виправити по висоті', en: 'Correct vertically'}, focus: ['frame.shims'], set: {'@motor': [0, 0, 25]}, cam: 'feet',
+     d: {uk: 'Висоту виправляють підкладками під лапи двигуна: однаково під усі чотири — для паралельного зміщення, різні спереду й ззаду — для кутового.', en: 'Correct the height with shims under the motor feet: equal under all four for offset, different front and rear for angle.'}},
+    {t: {uk: 'Виправити вбік', en: 'Correct sideways'}, focus: ['motor.frame'], set: {'@motor': [0, 18, 0]}, cam: 'coupTop',
+     d: {uk: 'Вбік двигун зсувають віджимними болтами або легкими ударами через мідну проставку, контролюючи індикатором.', en: 'Move the motor sideways with jacking bolts or light taps through a copper drift while watching the indicator.'}},
+    {t: {uk: 'Затягнути й перевірити', en: 'Tighten and re-check'}, focus: ['frame.bolts_motor'], set: {'@motor': [0, 0, 0]}, cam: 'feet',
+     d: {uk: 'Затягнути болти лап хрестом і зняти покази ще раз — після затяжки центрування часто зсувається.', en: 'Tighten the foot bolts crosswise and read again — alignment often shifts when the bolts are tightened.'}},
+    {t: {uk: 'Огородження й контроль', en: 'Guard and check'}, focus: ['sensor.P_DE', 'sensor.M_DE'], set: {'coupling.guard': [0, 0, 0]}, cam: 'coupling', spin: true,
+     d: {uk: 'Поставити огородження. У Flowbit осьова 1× і 2× на P-DE і M-DE мають помітно впасти — збережіть новий еталон.', en: 'Refit the guard. In Flowbit the axial 1× and 2× at P-DE and M-DE should drop clearly — save a new baseline.'}}
+  ]},
+  {id: 'bush', t: {uk: 'Заміна втулок муфти', en: 'Replace the coupling bushings'}, when: {uk: 'Поштовхи на пуску, гумовий пил, 2× повертається після центрування.', en: 'Knocks at start-up, rubber dust, 2× returning after alignment.'}, steps: [
+    SAFE, GUARD,
+    {t: {uk: 'Відсунути двигун', en: 'Slide the motor back'}, focus: ['frame.bolts_motor'], set: {'@motor': [150, 0, 0]}, cam: 'coupling',
+     d: {uk: 'Відпустити болти лап двигуна й відсунути його, щоб пальці з втулками вийшли з напівмуфти двигуна.', en: 'Loosen the motor foot bolts and slide the motor back so the pins with bushings come out of the motor half.'}},
+    {t: {uk: 'Зняти зношені втулки', en: 'Remove the worn bushings'}, focus: ['coupling.bushings', 'coupling.pins'], set: {'coupling.bushings': [90, 0, 170]}, cam: 'coupling',
+     d: {uk: 'Зняти гумові втулки з пальців. Оглянути пальці: виробіток чи згин — міняти пальці комплектом.', en: 'Take the rubber bushings off the pins. Check the pins: wear or bending means a new set of pins.'}},
+    {t: {uk: 'Надіти нові', en: 'Fit new ones'}, focus: ['coupling.bushings'], set: {'coupling.bushings': [0, 0, 0]}, cam: 'coupling',
+     d: {uk: 'Надіти нові втулки — усі шість комплектом, не по одній. Гайки пальців затягнути й законтрити.', en: 'Fit new bushings — all six as a set, not one at a time. Tighten and lock the pin nuts.'}},
+    {t: {uk: 'Повернути двигун', en: 'Return the motor'}, focus: ['coupling.half_motor'], set: {'@motor': [0, 0, 0]}, cam: 'coupling', link: 'align',
+     d: {uk: 'Повернути двигун, ввести пальці в отвори напівмуфти двигуна (РЕ п. 4.3.6.24). Зазор між напівмуфтами — за паспортом муфти (у моделі 4 мм). Перевірити центрування.', en: 'Bring the motor back and guide the pins into the motor half (manual §4.3.6.24). Gap between the halves — per the coupling data (4 mm in the model). Check the alignment.'}},
+    {t: {uk: 'Огородження й пуск', en: 'Guard and start'}, focus: ['sensor.P_DE', 'sensor.M_DE'], set: {'coupling.guard': [0, 0, 0]}, cam: 'coupling', spin: true,
+     d: {uk: 'Поставити огородження, пустити агрегат і записати еталон у Flowbit.', en: 'Refit the guard, start the unit and save a baseline in Flowbit.'}}
+  ]},
+  {id: 'ring', t: {uk: 'Колесо і щілинне кільце', en: 'Impeller and wear ring'}, when: {uk: 'Напір упав понад 10 %, дисбаланс, кавітаційний шум.', en: 'Head down more than 10 %, unbalance, cavitation noise.'}, steps: [
+    SAFE, GUARD, ...PULL,
+    {t: {uk: 'Оглянути колесо', en: 'Inspect the impeller'}, focus: ['rotor.impeller'], cam: 'imp',
+     d: {uk: 'Раковини на вході лопатей і на вічку — кавітація; стерті кромки — абразив; тріщини чи відламані лопаті — колесо міняти. Відкладення — очистити.', en: 'Pitting at the vane inlets and the eye — cavitation; worn edges — abrasives; cracks or broken vanes — replace the impeller. Clean off deposits.'}},
+    {t: {uk: 'Перевірити щілинне кільце', en: 'Check the wear ring'}, focus: ['pump.wear_ring'], cam: 'pump', clip: true,
+     d: {uk: 'Виміряти зазор між шийкою вічка колеса й кільцем. Напір упав понад 10 % (граничний стан за РЕ) або на кільці задири — кільце міняти.', en: 'Measure the gap between the impeller eye neck and the ring. Head more than 10 % down (limit state per the manual) or a scored ring — replace the ring.'}},
+    {t: {uk: 'Замінити кільце', en: 'Replace the ring'}, focus: ['pump.wear_ring'], set: {'pump.wear_ring': [150, 0, 150]}, cam: 'pump', clip: true,
+     d: {uk: 'Випресувати старе кільце, запресувати нове рівно, без перекосу.', en: 'Press the old ring out and press the new one in square.'}},
+    {t: {uk: 'Балансування колеса', en: 'Balance the impeller'}, focus: ['rotor.impeller'], cam: 'imp',
+     d: {uk: 'Після наплавлення, підрізки чи заміни колесо балансують (типово клас G6.3).', en: 'After welding, trimming or replacement the impeller is balanced (typically grade G6.3).'}},
+    {t: {uk: 'Зібрати насос', en: 'Reassemble the pump'}, focus: ['rotor.impeller', 'pump.cover', 'pump.wear_ring'], set: {'*': 0, 'coupling.guard': [0, 0, 330], '@motor': [260, 0, 0]}, cam: 'pump', clip: true,
+     d: {uk: 'Зібрати у зворотному порядку. Зазор колесо — кришка 3 ± 0,5 мм; ротор провертається рукою вільно.', en: 'Reassemble in reverse order. Impeller-to-cover gap 3 ± 0.5 mm; the rotor turns freely by hand.'}},
+    {t: {uk: 'Центрування, пуск, еталон', en: 'Align, start, baseline'}, focus: ['sensor.P_NDE', 'sensor.P_DE'], set: {'*': 0}, cam: 'all', spin: true, link: 'align',
+     d: {uk: 'Відцентрувати, поставити огородження, пустити (2–3 с, потім 4–5 хв). Напір за манометром має повернутися до паспортного. Записати еталон у Flowbit.', en: 'Align, refit the guard, start (2–3 s, then 4–5 min). The gauge head must return to the rated value. Save a baseline in Flowbit.'}}
+  ]}
+];
+const PROC = Object.fromEntries(PROCS.map(p => [p.id, p]));
+
+// housings that the section view cuts (the rest stays whole so it shows inside)
+const CLIP = new Set(['pump.casing', 'pump.cover', 'pump.bracket', 'pump.cover_front', 'pump.cover_rear', 'coupling.guard', 'motor.frame', 'motor.shield_de', 'motor.shield_nde', 'motor.fan_cover', 'motor.stator', 'motor.winding', 'pump.bolts_flange', 'seal.gland', 'seal.packing', 'seal.studs', 'pump.wear_ring', 'seal.lips', 'pump.foot', 'motor.terminal_box']);
+
+// ===================================================================== state
+const S = {tab: 'parts', sel: null, explode: 0, clip: false, sensors: true, spin: false, view: 0,
+  focus: new Set(), hot: new Set(), ghost: false, moves: {}, fault: null, proc: null, step: 0, alert: new Set()};
+const PARTS = {};
+let ready = false;
+
+// ===================================================================== three.js scene
+const stage = $('#stage'), canvas = $('#c');
+let renderer = null;
+try {
+  renderer = new THREE.WebGLRenderer({canvas, antialias: true, alpha: true, powerPreference: 'high-performance'});
+} catch (e) { renderer = null; }
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(38, 1, 0.01, 60);
+let controls = null;
+const mm = (a, b, c) => new THREE.Vector3(a / 1000, c / 1000, -b / 1000);      // model mm -> three metres (Y up)
+const dirv = d => new THREE.Vector3(d[0], d[2], -d[1]).normalize();
+const clipPlane = new THREE.Plane(new THREE.Vector3(0, 0, -1), 0);             // removes the half facing the default camera
+const ACC = new THREE.Color('#56c8ff'), HOT = new THREE.Color('#ff7a1a'), ALERT = new THREE.Color('#ff5555');
+
+if (renderer) {
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.05;
+  renderer.localClippingEnabled = true;
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  scene.environment = pmrem.fromScene(new RoomEnvironment(renderer), 0.04).texture;
+  const key = new THREE.DirectionalLight(0xffffff, 1.4); key.position.set(-1.2, 2.6, 2.2); scene.add(key);
+  const rim = new THREE.DirectionalLight(0x9cc8ff, 0.7); rim.position.set(2.5, 1.2, -2); scene.add(rim);
+  scene.add(new THREE.HemisphereLight(0xcfe3ff, 0x0a1830, 0.45));
+  const grid = new THREE.GridHelper(3.2, 32, 0x3a6fb8, 0x1d4277);
+  grid.material.transparent = true; grid.material.opacity = 0.45; grid.position.set(0.58, 0, 0); scene.add(grid);
+  // soft contact shadow under the frame
+  const cv = document.createElement('canvas'); cv.width = 256; cv.height = 128;
+  const g = cv.getContext('2d'); const rg = g.createRadialGradient(128, 64, 8, 128, 64, 128);
+  rg.addColorStop(0, 'rgba(0,0,0,.55)'); rg.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = rg; g.fillRect(0, 0, 256, 128);
+  const sh = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 0.62), new THREE.MeshBasicMaterial({map: new THREE.CanvasTexture(cv), transparent: true, depthWrite: false}));
+  sh.rotation.x = -Math.PI / 2; sh.position.set(0.53, 0.001, 0); scene.add(sh);
+  controls = new OrbitControls(camera, canvas);
+  controls.enableDamping = true; controls.dampingFactor = 0.08;
+  controls.minDistance = 0.22; controls.maxDistance = 6; controls.maxPolarAngle = Math.PI * 0.94;
+  controls.addEventListener('start', () => { tween = null; });
+  setView(VIEWS.all, 0);
+} else {
+  showFail(L().noWebgl);
+}
+
+function showFail(msg) {
+  const el = $('#loading'); el.classList.add('err'); el.textContent = L().fail + msg;
+  $('#poster').classList.remove('gone');
+}
+
+// ---------------------------------------------------------------- loading the model
+if (renderer) {
+  const draco = new DRACOLoader();
+  draco.setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/libs/draco/gltf/');
+  const loader = new GLTFLoader(); loader.setDRACOLoader(draco);
+  loader.load('models/k80-50-200.glb', gltf => {
+    initModel(gltf.scene);
+    $('#loading').hidden = true; $('#poster').classList.add('gone');
+    ready = true; refresh(); renderTab();
+  }, xhr => {
+    if (xhr.total) $('#pct').textContent = Math.round(xhr.loaded / xhr.total * 100) + '%';
+  }, err => { console.error(err); showFail(String(err && err.message || err)); });
+}
+
+function initModel(root) {
+  scene.add(root);
+  // debugging handle: snap() jumps to the end of the current animation and draws one frame
+  window.__k80 = {scene, PARTS, S, camera, controls, renderer, snap() {
+    for (const p of Object.values(PARTS)) p.obj.position.copy(p.tgt);
+    if (tween) { controls.target.copy(tween.tT); camera.position.copy(tween.tP); tween = null; }
+    controls.update(); renderer.render(scene, camera); labels();
+  }};
+  root.traverse(o => {
+    const pid = o.userData && o.userData.pid;
+    if (!pid || PARTS[pid]) return;
+    const e = o.userData.explode || [0, 0, 0];
+    const p = PARTS[pid] = {pid, obj: o, base: o.position.clone(), ex: new THREE.Vector3(e[0], e[2], -e[1]), rot: !!o.userData.rotating,
+      meshes: [], tgt: o.position.clone()};
+    o.traverse(m => {
+      if (!m.isMesh) return;
+      m.material = m.material.clone();
+      const mt = m.material;
+      mt.userData.b = {e: mt.emissive.clone(), ei: mt.emissiveIntensity, o: mt.opacity, t: mt.transparent};
+      m.userData.pid = pid; p.meshes.push(m);
+    });
+  });
+  for (const p of Object.values(PARTS)) { p.box = new THREE.Box3().setFromObject(p.obj); p.center = p.box.getCenter(new THREE.Vector3()); }
+}
+
+// ---------------------------------------------------------------- visual state
+function targets() {
+  for (const p of Object.values(PARTS)) {
+    const m = S.moves[p.pid];
+    p.tgt.copy(p.base).addScaledVector(p.ex, S.explode);
+    if (m) p.tgt.add(mm(m[0], m[1], m[2]));
+  }
+}
+function look() {
+  const anyFocus = S.focus.size > 0;
+  for (const p of Object.values(PARTS)) {
+    const sens = p.pid.startsWith('sensor.');
+    let vis = sens ? S.sensors : true;
+    if (sens && S.clip && p.center.z > 0.02 && !S.focus.has(p.pid)) vis = false;
+    p.obj.visible = vis;
+    const sel = S.focus.has(p.pid) || S.sel === p.pid, hot = S.hot.has(p.pid), al = S.alert.has(p.pid);
+    const ghost = !!S.ghost && anyFocus && !sel && !sens && !hot;
+    const mv = S.moves[p.pid], moved = !!mv && (mv[0] || mv[1] || mv[2]);
+    const clip = S.clip && CLIP.has(p.pid) && !moved;
+    for (const m of p.meshes) {
+      const mt = m.material, b = mt.userData.b;
+      if (hot) { mt.emissive.copy(HOT); mt.emissiveIntensity = 0.9; }
+      else if (al) { mt.emissive.copy(ALERT); mt.emissiveIntensity = 0.6; }
+      else if (sel) { mt.emissive.copy(ACC); mt.emissiveIntensity = 0.42; }
+      else { mt.emissive.copy(b.e); mt.emissiveIntensity = b.ei; }
+      const tr = ghost || b.t;
+      const side = clip ? THREE.DoubleSide : THREE.FrontSide;
+      if (mt.transparent !== tr || mt.side !== side || (mt.clippingPlanes || []).length !== (clip ? 1 : 0)) mt.needsUpdate = true;
+      mt.transparent = tr; mt.opacity = ghost ? (typeof S.ghost === 'number' ? S.ghost : 0.13) : b.o; mt.depthWrite = !ghost;
+      mt.side = side; mt.clippingPlanes = clip ? [clipPlane] : null;
+    }
+  }
+}
+function refresh() { if (!ready) return; targets(); look(); updateToolbar(); }
+
+// ---------------------------------------------------------------- camera
+let tween = null;
+function setView(v, ms = 900) {
+  const t = mm(v.t[0], v.t[1], v.t[2]);
+  const r = v.r * (stage.clientWidth < stage.clientHeight * 1.05 ? 1.5 : 1);
+  const pos = t.clone().addScaledVector(dirv(v.d), r);
+  if (!controls) return;
+  if (!ms) { controls.target.copy(t); camera.position.copy(pos); controls.update(); return; }
+  tween = {t0: performance.now(), ms, fT: controls.target.clone(), tT: t, fP: camera.position.clone(), tP: pos};
+}
+// frame a set of parts at their target positions, looking from the preset direction d
+function fitParts(pids, d, pad = 1.15) {
+  if (!controls) return;
+  const box = new THREE.Box3();
+  for (const pid of pids) {
+    const p = PARTS[pid]; if (!p) continue;
+    box.union(p.box.clone().translate(p.tgt.clone().sub(p.base)));
+  }
+  if (box.isEmpty()) return;
+  const c = box.getCenter(new THREE.Vector3());
+  const rad = Math.max(0.2, box.getBoundingSphere(new THREE.Sphere()).radius * pad);
+  const vf = THREE.MathUtils.degToRad(camera.fov) / 2, hf = Math.atan(Math.tan(vf) * camera.aspect);
+  const dist = rad / Math.sin(Math.min(vf, hf));
+  tween = {t0: performance.now(), ms: 900, fT: controls.target.clone(), tT: c, fP: camera.position.clone(), tP: c.clone().addScaledVector(dirv(d), dist)};
+}
+function focusPart(pid) {
+  const p = PARTS[pid]; if (!p || !controls) return;
+  const box = new THREE.Box3().setFromObject(p.obj); const c = box.getCenter(new THREE.Vector3());
+  const size = box.getSize(new THREE.Vector3()).length();
+  const dir = camera.position.clone().sub(controls.target).normalize();
+  const r = Math.max(0.42, size * 2.1) * (stage.clientWidth < stage.clientHeight * 1.05 ? 1.4 : 1);
+  tween = {t0: performance.now(), ms: 800, fT: controls.target.clone(), tT: c, fP: camera.position.clone(), tP: c.clone().addScaledVector(dir, r)};
+}
+
+// ---------------------------------------------------------------- render loop
+function resize() {
+  if (!renderer) return;
+  const w = stage.clientWidth, h = stage.clientHeight;
+  renderer.setSize(w, h, false); camera.aspect = w / Math.max(1, h); camera.updateProjectionMatrix();
+}
+new ResizeObserver(resize).observe(stage); resize();
+let onScreen = true;
+new IntersectionObserver(es => { onScreen = es[0].isIntersecting; }).observe(stage);
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+let last = performance.now();
+function frame(now) {
+  requestAnimationFrame(frame);
+  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  if (!renderer || !onScreen) return;
+  if (tween) {
+    const t = Math.min(1, (now - tween.t0) / tween.ms), e = t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+    controls.target.lerpVectors(tween.fT, tween.tT, e); camera.position.lerpVectors(tween.fP, tween.tP, e);
+    if (t >= 1) tween = null;
+  }
+  if (ready) {
+    const k = reduce ? 1 : 1 - Math.exp(-dt * 6);
+    for (const p of Object.values(PARTS)) {
+      p.obj.position.lerp(p.tgt, k);
+      if (S.spin && p.rot) p.obj.rotation.x -= dt * 4.2;     // clockwise seen from the motor
+    }
+  }
+  controls.update();
+  renderer.render(scene, camera);
+  if (ready) labels();
+}
+requestAnimationFrame(frame);
+
+// ---------------------------------------------------------------- sensor labels
+const labelBox = $('#labels');
+const LBL = {};
+for (const s of SENSORS) {
+  const b = document.createElement('button');
+  b.type = 'button'; b.className = 'lbl' + (s.pr === 2 ? ' p2' : ''); b.textContent = s.id.replace('_', '-');
+  b.addEventListener('click', () => { setTab('sensors'); selectSensor(s.id); });
+  labelBox.appendChild(b); LBL[s.id] = b;
+}
+const tmpV = new THREE.Vector3();
+function labels() {
+  const w = stage.clientWidth, h = stage.clientHeight;
+  for (const s of SENSORS) {
+    const p = PARTS['sensor.' + s.id], el = LBL[s.id];
+    if (!p || !p.obj.visible) { el.style.display = 'none'; continue; }
+    tmpV.setFromMatrixPosition(p.obj.matrixWorld); tmpV.y += 0.045;
+    tmpV.project(camera);
+    if (tmpV.z > 1) { el.style.display = 'none'; continue; }
+    el.style.display = '';
+    el.style.transform = `translate(${(tmpV.x * .5 + .5) * w}px,${(-tmpV.y * .5 + .5) * h}px) translate(-50%,-100%)`;
+    el.classList.toggle('alert', S.alert.has('sensor.' + s.id));
+  }
+}
+
+// ---------------------------------------------------------------- picking and hover
+const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
+function pickAt(x, y) {
+  const r = canvas.getBoundingClientRect();
+  ndc.set(((x - r.left) / r.width) * 2 - 1, -((y - r.top) / r.height) * 2 + 1);
+  ray.setFromCamera(ndc, camera);
+  const list = [];
+  for (const p of Object.values(PARTS)) if (p.obj.visible) for (const m of p.meshes) if (!(m.material.transparent && m.material.opacity < .5)) list.push(m);
+  for (const h of ray.intersectObjects(list, false)) {
+    const pid = h.object.userData.pid;
+    if (S.clip && CLIP.has(pid) && clipPlane.distanceToPoint(h.point) < 0) continue;
+    return pid;
+  }
+  return null;
+}
+let down = null;
+canvas.addEventListener('pointerdown', e => { down = {x: e.clientX, y: e.clientY}; });
+canvas.addEventListener('pointerup', e => {
+  if (!down || !ready) return;
+  if (Math.hypot(e.clientX - down.x, e.clientY - down.y) < 6) {
+    const pid = pickAt(e.clientX, e.clientY);
+    if (pid) { if (pid.startsWith('sensor.')) { setTab('sensors'); selectSensor(pid.slice(7)); } else { setTab('parts'); selectPart(pid, false); } }
+  }
+  down = null;
+});
+const tip = $('#tip'); let hoverReq = null;
+canvas.addEventListener('pointermove', e => {
+  if (e.pointerType !== 'mouse' || !ready || down) { tip.style.display = 'none'; return; }
+  if (hoverReq) return;
+  hoverReq = requestAnimationFrame(() => {
+    hoverReq = null;
+    const pid = pickAt(e.clientX, e.clientY);
+    if (!pid) { tip.style.display = 'none'; return; }
+    const r = stage.getBoundingClientRect();
+    tip.textContent = partName(pid); tip.style.display = 'block';
+    tip.style.left = (e.clientX - r.left) + 'px'; tip.style.top = (e.clientY - r.top) + 'px';
+  });
+});
+canvas.addEventListener('pointerleave', () => { tip.style.display = 'none'; });
+
+// ===================================================================== names
+const NAMES = {};
+function partName(pid) {
+  const p = PARTS[pid];
+  if (p) return LANG === 'en' ? (p.obj.userData.en || pid) : (p.obj.userData.uk || pid);
+  return NAMES[pid] ? T(NAMES[pid]) : pid;
+}
+const sensorName = id => { const s = SENSORS.find(x => x.id === id); return s ? `${id.replace('_', '-')} · ${T(s)}` : id; };
+
+// ===================================================================== tabs and panels
+function setTab(t) {
+  S.tab = t;
+  for (const id of ['parts', 'sensors', 'faults', 'proc']) {
+    $('#t-' + id).setAttribute('aria-selected', String(id === t));
+    $('#tab-' + id).hidden = id !== t;
+  }
+}
+$$('.tabs [role=tab]').forEach(b => b.addEventListener('click', () => {
+  const t = b.id.slice(2);
+  if (t !== 'proc' && S.proc) exitProc(false);
+  if (t !== 'faults' && S.fault) closeFault();
+  setTab(t); renderTab();
+}));
+$$('[data-tab-link]').forEach(a => a.addEventListener('click', () => {
+  const t = a.dataset.tabLink; setTab(t); renderTab();
+  const d = a.closest('details'); if (d) d.open = false;
+}));
+function renderTab() { ({parts: renderParts, sensors: renderSensors, faults: renderFaults, proc: renderProc})[S.tab](); }
+
+// ---------------------------------------------------------------- parts
+function chipsSens(list) {
+  if (!list || !list.length) return `<span class="small">${esc(L().none)}</span>`;
+  return list.map(id => `<button type="button" class="pbtn" data-sens="${id}">${esc(sensorName(id))}</button>`).join('');
+}
+function chipsProc(list) {
+  return (list || []).map(id => `<button type="button" class="pbtn" data-proc="${id}">${esc(T(PROC[id].t))}</button>`).join('');
+}
+function renderParts() {
+  const el = $('#tab-parts');
+  let card = `<div class="card"><p class="empty">${esc(L().pick)}</p></div>`;
+  if (S.sel) {
+    const inf = INFO[S.sel] || {};
+    const g = GROUPS.find(g => g.parts.includes(S.sel));
+    card = `<div class="card sel"><h3><span>${esc(partName(S.sel))}</span><button type="button" class="tb" data-focus="${S.sel}">${esc(L().focus)}</button></h3>
+      <span class="small mono">${esc(g ? T(g) : '')} · ${esc(S.sel)}</span>
+      <dl class="kv">
+        ${inf.r ? `<dt>${esc(L().role)}</dt><dd>${esc(T(inf.r))}</dd>` : ''}
+        ${inf.s ? `<dt>${esc(L().spec)}</dt><dd>${esc(T(inf.s))}</dd>` : ''}
+        ${inf.f ? `<dt>${esc(L().fails)}</dt><dd>${esc(T(inf.f))}</dd>` : ''}
+        ${inf.v ? `<dt>${esc(L().sees)}</dt><dd><div class="plist2">${chipsSens(inf.v)}</div></dd>` : ''}
+        ${inf.p && inf.p.length ? `<dt>${esc(L().proc)}</dt><dd><div class="plist2">${chipsProc(inf.p)}</div></dd>` : ''}
+      </dl></div>`;
+  }
+  el.innerHTML = card + GROUPS.filter(g => g.id !== 'sensor').map(g => `<div class="grp"><h4>${esc(T(g))}</h4><div class="plist">${
+    g.parts.map(pid => `<button type="button" class="pbtn" data-part="${pid}" aria-pressed="${S.sel === pid}">${esc(partName(pid))}</button>`).join('')}</div></div>`).join('');
+}
+function selectPart(pid, fly = true) {
+  if (S.proc) exitProc(false);
+  if (S.fault) closeFault();
+  S.sel = pid; S.focus = new Set([pid]); S.ghost = false; S.alert = new Set();
+  refresh(); renderParts();
+  if (fly) focusPart(pid);
+}
+
+// ---------------------------------------------------------------- sensors
+function renderSensors() {
+  $('#tab-sensors').innerHTML = `<div class="card"><p>${esc(L().sensIntro)}</p><p class="small" style="margin:0">${esc(L().minSet)}</p></div>
+    <div class="sens">${SENSORS.map(s => `<div class="card${S.sel === 'sensor.' + s.id ? ' sel' : ''}" data-sensor="${s.id}" tabindex="0" role="button">
+      <h3><span>${esc(T(s))}</span><span class="badge${s.pr === 2 ? ' p2' : ''}">${s.id.replace('_', '-')}</span></h3>
+      <span class="chip ${s.pr === 1 ? 'info' : 'mut'}">${esc(s.pr === 1 ? L().prio1 : L().prio2)}</span>
+      <dl class="kv"><dt>${esc(L().where)}</dt><dd>${esc(T(s.where))}</dd><dt>${esc(L().axes)}</dt><dd>${esc(T(s.axes))}</dd><dt>${esc(L().seesT)}</dt><dd>${esc(T(s.sees))}</dd></dl>
+    </div>`).join('')}</div>
+    <div class="card" style="margin-top:12px"><h3>${esc(L().rulesT)}</h3><ul class="tight">${L().rules.map(r => `<li>${esc(r)}</li>`).join('')}</ul></div>`;
+}
+function selectSensor(id) {
+  if (S.proc) exitProc(false);
+  if (S.fault) closeFault();
+  const pid = 'sensor.' + id;
+  S.sensors = true; S.sel = pid; S.focus = new Set([pid]); S.ghost = false; S.alert = new Set();
+  refresh(); renderSensors(); focusPart(pid);
+}
+
+// ---------------------------------------------------------------- faults
+function spectrum(f) {
+  const W = 340, H = 132, x0 = 30, x1 = 330, y0 = 104, y1 = 16, FM = 200;
+  const X = hz => x0 + Math.min(hz, FM) / FM * (x1 - x0);
+  let s = `<svg class="spec" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(L().sp)}">`;
+  s += `<rect x="${X(2)}" y="${y1 - 6}" width="${X(160) - X(2)}" height="${y0 - y1 + 6}" fill="rgba(86,200,255,.07)"/>`;
+  s += `<text x="${X(2) + 4}" y="${y1 + 2}" font-size="9" fill="#56c8ff">${esc(L().band)} 2–160 ${esc(L().hz)}</text>`;
+  if (f.noise) {
+    let pts = [];
+    for (let i = 0; i <= 120; i++) {
+      const hz = i / 120 * FM, j = (Math.sin(i * 12.9898) * 43758.5453) % 1, rnd = Math.abs(j);
+      let a = 0.03 + rnd * 0.03;
+      if (f.noise === 'broad') a += 0.06 + hz / FM * 0.22 + rnd * 0.08;
+      if (f.noise === 'hf') a += hz / FM * 0.16 * rnd + hz / FM * 0.06;
+      if (f.noise === 'low') a += Math.exp(-hz / 18) * 0.35 * (0.6 + rnd * 0.5);
+      pts.push(`${X(hz).toFixed(1)},${(y0 - a * (y0 - y1)).toFixed(1)}`);
+    }
+    s += `<polyline points="${pts.join(' ')}" fill="none" stroke="#9cb3d8" stroke-width="1" opacity=".8"/>`;
+  }
+  s += `<line x1="${x0}" y1="${y0}" x2="${x1}" y2="${y0}" stroke="#7fb2ff" stroke-width="1"/>`;
+  for (const t of [0, 50, 100, 150, 200]) s += `<line x1="${X(t)}" y1="${y0}" x2="${X(t)}" y2="${y0 + 4}" stroke="#7fb2ff"/><text x="${X(t)}" y="${y0 + 15}" font-size="9" fill="#9cb3d8" text-anchor="middle">${t}</text>`;
+  s += `<text x="${x1}" y="${H - 2}" font-size="9" fill="#9cb3d8" text-anchor="end">${esc(L().hz)}</text>`;
+  let flip = 0;
+  for (const [hz, a, lb, out] of f.peaks) {
+    const over = hz > FM, x = over ? x1 - 4 : X(hz), y = y0 - a * (y0 - y1);
+    const col = out ? '#ffb547' : '#56c8ff';
+    s += `<line x1="${x}" y1="${y0}" x2="${x}" y2="${y}" stroke="${col}" stroke-width="${out ? 1.4 : 2.2}" ${out ? 'stroke-dasharray="3 2"' : ''}/>`;
+    s += `<circle cx="${x}" cy="${y}" r="2.4" fill="${col}"/>`;
+    const ly = Math.max(y1 + 10, y - 5 - (flip++ % 2) * 10);
+    s += `<text x="${over ? x - 3 : x}" y="${ly}" font-size="9" fill="${col}" text-anchor="${over ? 'end' : 'middle'}">${esc(lb)}${over || out ? ' ' + String(hz).replace('.', LANG === 'uk' ? ',' : '.') : ''}</text>`;
+  }
+  if (f.temp) s += `<text x="${x1}" y="${y1 + 2}" font-size="9" fill="#ff9a3d" text-anchor="end">t° ↑</text>`;
+  return s + '</svg>';
+}
+function renderFaults() {
+  const cov = L().cov;
+  $('#tab-faults').innerHTML = `<div class="card"><p style="margin:0">${esc(L().faultsIntro)}</p></div>` + FAULTS.map(f => `
+    <details class="fault" data-fault="${f.id}" ${S.fault === f.id ? 'open' : ''}>
+      <summary><span class="sev ${f.sev}"></span><span class="ttl">${esc(T(f.t))}</span>
+        <span class="meta"><span class="chip ${f.cov === 'full' ? 'ok' : f.cov === 'part' ? 'warn' : 'mut'}">${esc(cov[f.cov])}</span>${f.sens.map(id => `<span class="chip info">${id.replace('_', '-')}</span>`).join('')}</span></summary>
+      <div class="body">
+        <h5>${esc(L().sp)}</h5>${spectrum(f)}
+        <h5>${esc(L().signs)}</h5><p>${esc(T(f.signs))}</p>
+        <h5>${esc(L().read)}</h5><p>${esc(T(f.read))}</p>
+        <h5>${esc(L().causes)}</h5><p>${esc(T(f.causes))}</p>
+        <h5>${esc(L().todo)}</h5><p>${esc(T(f.todo))}</p>
+        <div class="plist2">${f.parts.map(pid => `<button type="button" class="pbtn" data-part="${pid}">${esc(partName(pid))}</button>`).join('')}</div>
+        ${f.proc ? `<div class="navrow"><button type="button" class="btn btn-p" data-proc="${f.proc}">${esc(L().open)}: ${esc(T(PROC[f.proc].t))}</button></div>` : ''}
+      </div>
+    </details>`).join('');
+}
+function openFault(id) {
+  const f = FAULTS.find(x => x.id === id); if (!f) return;
+  if (S.proc) exitProc(false);
+  S.fault = id; S.sel = null; S.explode = 0; S.moves = {};
+  S.focus = new Set(f.parts); S.alert = new Set(f.sens.map(s => 'sensor.' + s)); S.hot = new Set();
+  S.ghost = f.clip ? false : 0.35; S.clip = !!f.clip; S.sensors = true; S.spin = false;
+  $('#explode').value = 0;
+  refresh();
+  const v = VIEWS[f.cam] || VIEWS.all;
+  if (f.cam === 'all') setView(v); else fitParts([...f.parts, ...S.alert], v.d, 1.35);
+}
+function closeFault() { S.fault = null; S.focus = new Set(); S.alert = new Set(); S.clip = false; S.ghost = false; refresh(); }
+
+// ---------------------------------------------------------------- procedures
+function renderProc() {
+  const el = $('#tab-proc');
+  if (!S.proc) {
+    el.innerHTML = `<div class="card"><p style="margin:0">${esc(L().procIntro)}</p></div><div class="proc-list">${PROCS.map(p =>
+      `<button type="button" data-proc="${p.id}"><b>${esc(T(p.t))}</b><span>${esc(L().when)}: ${esc(T(p.when))} · ${p.steps.length} ${esc(L().steps)}</span></button>`).join('')}</div>`;
+    return;
+  }
+  const p = PROC[S.proc], st = p.steps[S.step], n = p.steps.length;
+  el.innerHTML = `<div class="card sel">
+    <span class="small mono">${esc(T(p.t))}</span>
+    <div class="dots">${p.steps.map((_, i) => `<button type="button" data-step="${i}" class="${i < S.step ? 'done' : ''}" ${i === S.step ? 'aria-current="step"' : ''} aria-label="${esc(L().step)} ${i + 1}">${i + 1}</button>`).join('')}</div>
+    <h3>${esc(L().step)} ${S.step + 1} ${esc(L().of)} ${n}. ${esc(T(st.t))}</h3>
+    <p class="step-d">${esc(T(st.d))}</p>
+    ${expand(st.focus).length ? `<div class="plist2">${expand(st.focus).filter(pid => !pid.startsWith('sensor.') || true).slice(0, 8).map(pid => `<button type="button" class="pbtn" data-fly="${pid}">${esc(partName(pid))}</button>`).join('')}</div>` : ''}
+    ${st.link ? `<div class="warnbox">${esc(L().related)}: <a href="#viewer" data-proc="${st.link}">${esc(T(PROC[st.link].t))}</a></div>` : ''}
+    <div class="navrow">
+      <button type="button" class="btn" data-nav="prev" ${S.step === 0 ? 'disabled' : ''}>← ${esc(L().prev)}</button>
+      <button type="button" class="btn btn-p" data-nav="next">${S.step === n - 1 ? esc(L().done) : esc(L().next) + ' →'}</button>
+      <button type="button" class="btn" data-nav="exit">${esc(L().exit)}</button>
+    </div></div>`;
+}
+function stateFor(p, i) {
+  const moves = {};
+  for (let k = 0; k <= i; k++) {
+    const set = p.steps[k].set || {};
+    if ('*' in set) for (const key of Object.keys(moves)) delete moves[key];
+    for (const [key, v] of Object.entries(set)) { if (key === '*') continue; for (const pid of expand([key])) moves[pid] = v; }
+  }
+  return moves;
+}
+function startProc(id, step = 0) {
+  if (S.fault) closeFault();
+  S.proc = id; S.step = step; setTab('proc'); applyStep();
+}
+function applyStep() {
+  const p = PROC[S.proc], st = p.steps[S.step];
+  S.moves = stateFor(p, S.step); S.explode = 0; $('#explode').value = 0;
+  S.focus = new Set(expand(st.focus)); S.hot = new Set(expand(st.hot)); S.alert = new Set();
+  S.clip = !!st.clip; S.spin = !!st.spin && !reduce; S.ghost = st.clip ? false : 0.3; S.sel = null;
+  refresh(); renderProc(); stepbar();
+  const v = VIEWS[st.cam] || VIEWS.all;
+  if (st.cam === 'all' || !S.focus.size) setView(v); else fitParts([...S.focus, ...S.hot], v.d, 1.25);
+}
+function stepbar() {
+  const sb = $('#stepbar');
+  if (!S.proc) { sb.hidden = true; return; }
+  const p = PROC[S.proc];
+  sb.hidden = false;
+  $('#sbN').textContent = `${T(p.t)} · ${S.step + 1}/${p.steps.length}`;
+  $('#sbT').textContent = T(p.steps[S.step].t);
+  $('#sbPrev').disabled = S.step === 0;
+}
+function go(d) {
+  const p = PROC[S.proc]; if (!p) return;
+  if (d > 0 && S.step === p.steps.length - 1) { exitProc(true); return; }
+  S.step = Math.max(0, Math.min(p.steps.length - 1, S.step + d)); applyStep();
+}
+function exitProc(render = true) {
+  S.proc = null; S.step = 0; S.moves = {}; S.focus = new Set(); S.hot = new Set(); S.clip = false; S.spin = false; S.ghost = false;
+  refresh(); stepbar(); if (render) { renderProc(); setView(VIEWS.all); }
+}
+$('#sbPrev').addEventListener('click', () => go(-1));
+$('#sbNext').addEventListener('click', () => go(1));
+$('#sbExit').addEventListener('click', () => exitProc(true));
+
+// ---------------------------------------------------------------- delegated clicks in the side panel
+$('.side').addEventListener('click', e => {
+  const b = e.target.closest('[data-part],[data-sens],[data-proc],[data-focus],[data-step],[data-nav],[data-fly],[data-sensor]');
+  if (!b) return;
+  if (b.dataset.part) { setTab('parts'); selectPart(b.dataset.part); window.innerWidth < 980 && stage.scrollIntoView({behavior: reduce ? 'auto' : 'smooth', block: 'start'}); }
+  else if (b.dataset.sens) { setTab('sensors'); selectSensor(b.dataset.sens); }
+  else if (b.dataset.sensor) { selectSensor(b.dataset.sensor); }
+  else if (b.dataset.proc) { e.preventDefault(); startProc(b.dataset.proc); }
+  else if (b.dataset.focus) focusPart(b.dataset.focus);
+  else if (b.dataset.fly) focusPart(b.dataset.fly);
+  else if (b.dataset.step) { S.step = +b.dataset.step; applyStep(); }
+  else if (b.dataset.nav) ({prev: () => go(-1), next: () => go(1), exit: () => exitProc(true)})[b.dataset.nav]();
+});
+$('.side').addEventListener('keydown', e => {
+  const c = e.target.closest('[data-sensor]');
+  if (c && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); selectSensor(c.dataset.sensor); }
+});
+$('#tab-faults').addEventListener('toggle', e => {
+  const d = e.target; if (!d.matches || !d.matches('details.fault')) return;
+  if (d.open) { $$('details.fault').forEach(x => { if (x !== d) x.open = false; }); openFault(d.dataset.fault); }
+  else if (S.fault === d.dataset.fault) closeFault();
+}, true);
+
+// ---------------------------------------------------------------- toolbar
+const ex = $('#explode');
+ex.addEventListener('input', () => {
+  if (S.proc) exitProc(true);
+  S.explode = ex.value / 100; refresh();
+});
+$('#bClip').addEventListener('click', () => { S.clip = !S.clip; refresh(); });
+$('#bSens').addEventListener('click', () => { S.sensors = !S.sensors; refresh(); });
+$('#bSpin').addEventListener('click', () => { S.spin = !S.spin; refresh(); });
+$('#bView').addEventListener('click', () => { S.view = (S.view + 1) % VIEW_CYCLE.length; setView(VIEWS[VIEW_CYCLE[S.view]]); updateToolbar(); });
+$('#bReset').addEventListener('click', () => {
+  if (S.proc) exitProc(false);
+  if (S.fault) { S.fault = null; $$('details.fault').forEach(x => { x.open = false; }); }
+  Object.assign(S, {sel: null, explode: 0, clip: false, spin: false, view: 0, focus: new Set(), hot: new Set(), alert: new Set(), moves: {}, sensors: true});
+  ex.value = 0; refresh(); renderTab(); setView(VIEWS.all);
+});
+function updateToolbar() {
+  $('#bClip').setAttribute('aria-pressed', String(S.clip));
+  $('#bSens').setAttribute('aria-pressed', String(S.sensors));
+  $('#bSpin').setAttribute('aria-pressed', String(S.spin));
+  $('#viewName').textContent = L().views[S.view];
+  $('#hud').innerHTML = `<b>${esc(L().hud)}</b>`;
+}
+
+// ===================================================================== language
+function setLang(l, save) {
+  LANG = l;
+  document.documentElement.dataset.lang = l; document.documentElement.lang = l;
+  $$('[data-lang-btn]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.langBtn === l)));
+  $$('[data-aria-' + l + ']').forEach(e => e.setAttribute('aria-label', e.getAttribute('data-aria-' + l)));
+  document.title = l === 'en' ? 'K80-50-200 · Flowbit 3D' : 'К80-50-200 · Flowbit 3D';
+  renderTab(); stepbar(); updateToolbar();
+  if (save) store.set('flowbit-lang', l);
+}
+$$('[data-lang-btn]').forEach(b => b.addEventListener('click', () => setLang(b.dataset.langBtn, true)));
+$$('details.menu .drop a').forEach(a => a.addEventListener('click', () => { a.closest('details').open = false; }));
+setLang(LANG, false);
+</script>
+</body>
+</html>
