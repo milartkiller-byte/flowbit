@@ -172,6 +172,15 @@ svg.spec{display:block;width:100%;height:auto;margin-top:6px;background:rgba(7,2
 .dots button.done{background:rgba(61,220,151,.14);color:var(--ok);border-color:rgba(61,220,151,.5)}
 .dots button[aria-current="step"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 .step-d{font-size:15px}
+.tools-h{margin:12px 0 6px;font:500 11.5px/1.4 var(--f-mono);letter-spacing:.1em;text-transform:uppercase;color:#ffb547}
+.tools{display:flex;flex-wrap:wrap;gap:6px}
+.tool{display:inline-flex;align-items:center;gap:7px;border:1px solid rgba(255,181,71,.5);background:rgba(255,181,71,.08);color:#ffe0ad;border-radius:9px;padding:6px 10px;font-size:13.5px;line-height:1.3}
+.tool svg{width:15px;height:15px;flex:none}
+details.prep{border:1px dashed rgba(255,181,71,.45);border-radius:10px;padding:8px 10px;margin:4px 0 10px}
+details.prep summary{cursor:pointer;font:500 12px/1.4 var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:#ffb547}
+details.prep .tools{margin-top:8px}
+.stepbar .sb-tool{display:flex;align-items:center;gap:6px;margin-top:2px;font-size:12px;color:#ffd9a0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stepbar .sb-tool svg{width:13px;height:13px;flex:none}
 .warnbox{border:1px solid rgba(255,181,71,.6);background:rgba(255,181,71,.08);border-radius:10px;padding:9px 12px;font-size:14px;margin:10px 0}
 .navrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
 .empty{color:var(--muted);font-size:14px}
@@ -256,7 +265,8 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:10px 28px;justify-content:space-bet
       <div class="labels" id="labels"></div>
       <div class="tip" id="tip"></div>
       <div class="stepbar" id="stepbar" hidden>
-        <div class="sb-t"><small id="sbN"></small><span id="sbT"></span></div>
+        <div class="sb-t"><small id="sbN"></small><span id="sbT"></span><span class="sb-tool" id="sbTool"></span></div>
+        <button class="tb" type="button" id="sbReplay" data-aria-uk="Повторити крок" data-aria-en="Replay the step" aria-label="Повторити крок"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8a5 5 0 1 0 1.5-3.6M3 2.5v2.6h2.6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
         <button class="tb" type="button" id="sbPrev" data-aria-uk="Попередній крок" data-aria-en="Previous step" aria-label="Попередній крок"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3 5 8l5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
         <button class="tb" type="button" id="sbNext" data-aria-uk="Наступний крок" data-aria-en="Next step" aria-label="Наступний крок"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m6 3 5 5-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
         <button class="tb" type="button" id="sbExit" data-aria-uk="Вийти з процедури" data-aria-en="Leave the procedure" aria-label="Вийти з процедури"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
@@ -387,7 +397,8 @@ const I = {
     sev: {crit: 'критично', warn: 'увага'}, band: 'смуга Flowbit E', hz: 'Гц', outband: 'поза смугою E',
     procIntro: 'Покрокові процедури: на кожному кроці модель показує, які деталі знімати і куди вони рухаються. Безпека — завжди перший крок.',
     steps: 'кроків', step: 'Крок', of: 'з', prev: 'Назад', next: 'Далі', exit: 'До списку', done: 'Готово', related: 'Пов’язана процедура',
-    tools: 'Інструмент', when: 'Коли', fromFault: 'Для несправності'
+    tools: 'Інструмент', when: 'Коли', fromFault: 'Для несправності', prep: 'Що підготувати', replay: 'Повторити', none2: 'не потрібен',
+    order: 'Порядок', play: 'Програти крок'
   },
   en: {
     views: ['Isometric', 'Front', 'Top', 'Pump end'], loading: 'Loading the model…', fail: 'Could not show 3D: ',
@@ -404,7 +415,8 @@ const I = {
     sev: {crit: 'critical', warn: 'warning'}, band: 'Flowbit E band', hz: 'Hz', outband: 'outside the E band',
     procIntro: 'Step-by-step procedures: at every step the model shows which parts come off and where they go. Safety is always the first step.',
     steps: 'steps', step: 'Step', of: 'of', prev: 'Back', next: 'Next', exit: 'To the list', done: 'Done', related: 'Related procedure',
-    tools: 'Tools', when: 'When', fromFault: 'For the fault'
+    tools: 'Tools', when: 'When', fromFault: 'For the fault', prep: 'What to prepare', replay: 'Replay', none2: 'none',
+    order: 'Order', play: 'Play the step'
   }
 };
 const L = () => I[LANG];
@@ -413,11 +425,11 @@ const L = () => I[LANG];
 const GROUPS = [
   {id: 'casing', uk: 'Корпус і проточна частина', en: 'Casing and wet end', parts: ['pump.casing', 'pump.wear_ring', 'pump.plug_vent', 'pump.plug_drain', 'pump.arrow']},
   {id: 'rotor', uk: 'Ротор насоса', en: 'Pump rotor', parts: ['rotor.impeller', 'rotor.impeller_nut', 'rotor.key_impeller', 'rotor.shaft', 'rotor.key_coupling']},
-  {id: 'seal', uk: 'Ущільнення вала (сальник)', en: 'Shaft seal (packing)', parts: ['pump.cover', 'seal.sleeve', 'seal.packing', 'seal.gland', 'seal.studs']},
-  {id: 'bracket', uk: 'Кронштейн і підшипники', en: 'Bracket and bearings', parts: ['pump.bracket', 'pump.bearing_nde', 'pump.bearing_de', 'pump.cover_front', 'pump.cover_rear', 'seal.lips', 'pump.grease_nipples', 'pump.temp_ports', 'pump.bolts_flange', 'pump.bolts_covers', 'pump.foot']},
-  {id: 'coupling', uk: 'Муфта', en: 'Coupling', parts: ['coupling.half_pump', 'coupling.pins', 'coupling.bushings', 'coupling.half_motor', 'coupling.guard']},
+  {id: 'seal', uk: 'Ущільнення вала (сальник)', en: 'Shaft seal (packing)', parts: ['pump.cover', 'seal.sleeve', 'seal.packing', 'seal.gland', 'seal.studs', 'seal.nuts']},
+  {id: 'bracket', uk: 'Кронштейн і підшипники', en: 'Bracket and bearings', parts: ['pump.bracket', 'pump.bearing_nde', 'pump.bearing_de', 'pump.cover_front', 'pump.cover_rear', 'seal.lips', 'pump.grease_nipples', 'pump.temp_ports', 'pump.bolts_flange', 'pump.bolts_cover_f', 'pump.bolts_cover_r', 'pump.foot']},
+  {id: 'coupling', uk: 'Муфта', en: 'Coupling', parts: ['coupling.half_pump', 'coupling.pins', 'coupling.bushings', 'coupling.half_motor', 'coupling.guard', 'coupling.guard_bolts']},
   {id: 'motor', uk: 'Двигун АИР160S2', en: 'AIR160S2 motor', parts: ['motor.frame', 'motor.stator', 'motor.winding', 'motor.rotor', 'motor.key', 'motor.bearing_de', 'motor.bearing_nde', 'motor.shield_de', 'motor.shield_nde', 'motor.fan', 'motor.fan_cover', 'motor.terminal_box', 'motor.eyebolt', 'motor.nameplate']},
-  {id: 'frame', uk: 'Рама і кріплення', en: 'Frame and fasteners', parts: ['frame.base', 'frame.shims', 'frame.bolts_pump', 'frame.bolts_motor', 'frame.anchors']},
+  {id: 'frame', uk: 'Рама і кріплення', en: 'Frame and fasteners', parts: ['frame.base', 'frame.shims', 'frame.bolts_casing', 'frame.bolts_foot', 'frame.bolts_motor', 'frame.anchors']},
   {id: 'sensor', uk: 'Датчики Flowbit E', en: 'Flowbit E sensors', parts: ['sensor.P_DE', 'sensor.P_NDE', 'sensor.M_DE', 'sensor.M_NDE']}
 ];
 
@@ -440,7 +452,8 @@ const INFO = {
   'seal.sleeve': {r: {uk: 'Змінна захисна втулка Ø35: по ній працює набивка, щоб не зношувався сам вал.', en: 'Replaceable Ø35 shaft sleeve: the packing runs on it so the shaft itself does not wear.'}, f: {uk: 'Кільцеві борозни від перетягнутої або брудної набивки — постійний витік. Міняють втулку, а не вал.', en: 'Circular grooves from over-tight or dirty packing — constant leakage. Replace the sleeve, not the shaft.'}, p: ['pack']},
   'seal.packing': {r: {uk: 'М’яка сальникова набивка: 4 кільця шнура 8×8 (типово ХБП-31 або АП-31). Має трохи підтікати — вода змащує й охолоджує.', en: 'Soft gland packing: 4 rings of 8×8 braid (typically KhBP-31 or AP-31). It must drip a little — water lubricates and cools it.'}, f: {uk: 'Перетяг — перегрів, дим, знос втулки; знос або недотяг — струмінь води й повітря в насосі.', en: 'Over-tightened — overheating, smoke, sleeve wear; worn or loose — a jet of water and air in the pump.'}, v: ['P_NDE'], p: ['pack']},
   'seal.gland': {r: {uk: 'Кришка сальника (нажимна втулка): дві шпильки М10 рівномірно стискають набивку.', en: 'Gland follower: two M10 studs compress the packing evenly.'}, f: {uk: 'Перекіс при нерівній затяжці — набивка гріється з одного боку.', en: 'Cocked by uneven tightening — the packing heats up on one side.'}, p: ['pack']},
-  'seal.studs': {r: {uk: 'Шпильки й гайки кришки сальника. Підтягувати по пів грані й тільки на зупиненому агрегаті (РЕ п. 3.7.9).', en: 'Gland studs and nuts. Tighten half a flat at a time and only with the unit stopped (manual §3.7.9).'}, p: ['pack']},
+  'seal.studs': {r: {uk: 'Дві шпильки М10, вкручені в кришку корпусу; на них сидить кришка сальника.', en: 'Two M10 studs screwed into the casing cover; the gland follower sits on them.'}, p: ['pack']},
+  'seal.nuts': {r: {uk: 'Гайки М10 (ключ 16) стискають набивку через кришку сальника. Підтягувати по пів грані й тільки на зупиненому агрегаті (РЕ п. 3.7.9).', en: 'M10 nuts (16 mm spanner) compress the packing through the gland. Tighten half a flat at a time and only with the unit stopped (manual §3.7.9).'}, p: ['pack']},
   'pump.bracket': {r: {uk: 'Чавунний кронштейн тримає вал на двох підшипниках і має вікна для доступу до сальника. Задня лапа стоїть на рамі.', en: 'Cast-iron bracket holds the shaft on two bearings and has windows to reach the packing. Its rear foot stands on the frame.'}, s: {uk: 'Корпус підшипників Ø108 · 2 отвори М8×1 під термодатчики · мастило Літол-24', en: 'Bearing housing Ø108 · 2 M8×1 ports for temperature sensors · Litol-24 grease'}, f: {uk: 'Ослаблена лапа, знос посадок під підшипники.', en: 'Loose foot, worn bearing seats.'}, v: ['P_DE', 'P_NDE'], p: ['bear']},
   'pump.bearing_nde': {r: {uk: 'Кульковий підшипник з боку колеса — бере радіальне навантаження від гідравліки.', en: 'Ball bearing on the impeller side — takes the radial hydraulic load.'}, s: BEAR306, f: BEARFAIL, v: ['P_NDE'], p: ['bear']},
   'pump.bearing_de': {r: {uk: 'Кульковий підшипник з боку муфти — бере навантаження від муфти й розцентрування.', en: 'Ball bearing on the coupling side — takes the loads from the coupling and misalignment.'}, s: BEAR306, f: BEARFAIL, v: ['P_DE'], p: ['bear']},
@@ -449,14 +462,16 @@ const INFO = {
   'seal.lips': {r: {uk: 'Гумові манжети в кришках підшипників.', en: 'Rubber lip seals in the bearing covers.'}, f: {uk: 'Зношена манжета — вода в мастилі — швидкий кінець підшипника.', en: 'A worn lip seal lets water into the grease and the bearing dies fast.'}, p: ['bear']},
   'pump.grease_nipples': {r: {uk: 'Маслянки для мастила Літол-24: у перший місяць — через 100 год роботи, далі кожні 1000 год (РЕ п. 4.3.3).', en: 'Grease nipples for Litol-24: after 100 h in the first month, then every 1000 h (manual §4.3.3).'}, p: ['bear']},
   'pump.temp_ports': {r: {uk: 'Отвори М8×1 у кронштейні під термодатчики підшипників (за РЕ). Межа: 90 °C і не більше ніж на 50 °C понад температуру приміщення.', en: 'M8×1 ports in the bracket for bearing temperature sensors (per the manual). Limit: 90 °C and no more than 50 °C above room temperature.'}},
-  'pump.bolts_flange': {r: {uk: '8 болтів М12 кріплять кронштейн до корпусу. Знімаються, коли ротор виймають назад; для відділення є віджимні гвинти.', en: '8 M12 bolts hold the bracket to the casing. They come out when the rotor is pulled back; jack screws separate the joint.'}, p: ['bear', 'ring']},
-  'pump.bolts_covers': {r: {uk: 'Болти М8 кришок підшипників.', en: 'M8 bearing cover bolts.'}, p: ['bear']},
+  'pump.bolts_flange': {r: {uk: '8 болтів М12 (ключ 18) кріплять кронштейн до корпусу. Відкручують і затягують хрестом; для відділення кронштейна є віджимні гвинти.', en: '8 M12 bolts (18 mm spanner) hold the bracket to the casing. Undo and tighten them crosswise; jack screws separate the joint.'}, p: ['bear', 'ring']},
+  'pump.bolts_cover_f': {r: {uk: '4 болти М8 (ключ 13) передньої кришки підшипника.', en: '4 M8 bolts (13 mm spanner) of the front bearing cover.'}, p: ['bear']},
+  'pump.bolts_cover_r': {r: {uk: '4 болти М8 (ключ 13) задньої кришки підшипника.', en: '4 M8 bolts (13 mm spanner) of the rear bearing cover.'}, p: ['bear']},
   'pump.foot': {r: {uk: 'Опорна лапа під корпусом підшипників, два пази 14 мм.', en: 'Support foot under the bearing housing, two 14 mm slots.'}, f: {uk: 'Ослаблені болти або «м’яка лапа» — вібрація з гармоніками.', en: 'Loose bolts or a soft foot — vibration with harmonics.'}, v: ['P_DE'], p: ['align']},
   'coupling.half_pump': {r: {uk: 'Напівмуфта насоса Ø140 (ПН140) із шістьма пальцями, на кінці вала Ø24 зі шпонкою.', en: 'Pump coupling half Ø140 (PN140) with six pins, on the Ø24 shaft end with a key.'}, f: {uk: 'Розбиті отвори під пальці, биття.', en: 'Worn pin holes, runout.'}, v: ['P_DE'], p: ['bush', 'align']},
   'coupling.pins': {r: {uk: '6 пальців Ø14 з гайками, закріплені в напівмуфті насоса.', en: '6 Ø14 pins with nuts, fixed in the pump half.'}, p: ['bush']},
   'coupling.bushings': {r: {uk: 'Гумові пружні втулки на пальцях гасять поштовхи й невелику неспіввісність.', en: 'Rubber bushings on the pins absorb shocks and small misalignment.'}, f: {uk: 'Тверднуть, тріскаються, стираються — удари на пуску, ріст 2× і осьової вібрації, гумовий пил під огородженням.', en: 'Harden, crack and wear — knocks at start-up, rising 2× and axial vibration, rubber dust under the guard.'}, v: ['P_DE', 'M_DE'], p: ['bush']},
   'coupling.half_motor': {r: {uk: 'Напівмуфта двигуна Ø140 (ПД140) на валу Ø42; в її отвори входять пальці з втулками. Зазор між напівмуфтами в моделі — 4 мм.', en: 'Motor coupling half Ø140 (PD140) on the Ø42 shaft; the pins with bushings go into its holes. Gap between the halves in the model — 4 mm.'}, v: ['M_DE'], p: ['bush', 'align']},
   'coupling.guard': {r: {uk: 'Огородження муфти. Працювати без нього заборонено (РЕ п. 3.4.4).', en: 'Coupling guard. Running without it is forbidden (manual §3.4.4).'}},
+  'coupling.guard_bolts': {r: {uk: '4 болти М10 (ключ 16) кріплять огородження до рами.', en: '4 M10 bolts (16 mm spanner) hold the guard to the frame.'}},
   'motor.frame': {r: {uk: 'Станина з ребрами охолодження й лапами: 4 отвори Ø15, 254×178 мм, вісь на висоті 160 мм.', en: 'Finned frame with feet: 4 holes Ø15, 254×178 mm, shaft height 160 mm.'}, v: ['M_DE', 'M_NDE']},
   'motor.stator': {r: {uk: 'Пакет сталі статора.', en: 'Stator core.'}},
   'motor.winding': {r: {uk: 'Обмотка статора 15 кВт, 380/660 В.', en: 'Stator winding, 15 kW, 380/660 V.'}, f: {uk: 'Міжвиткове замикання, перегрів, несиметрія фаз — пік 100 Гц у спектрі (2× частота мережі).', en: 'Turn-to-turn short, overheating, phase unbalance — a 100 Hz peak in the spectrum (2× line frequency).'}, v: ['M_DE', 'M_NDE']},
@@ -473,8 +488,9 @@ const INFO = {
   'motor.nameplate': {r: {uk: 'Табличка: АИР160S2, 15 кВт, 2940 об/хв, 380/660 В.', en: 'Nameplate: AIR160S2, 15 kW, 2940 rpm, 380/660 V.'}},
   'frame.base': {r: {uk: 'Зварна рама зі швелера 900×280 мм, 4 фундаментні болти, висота осі агрегату 248 мм. Фундамент має важити не менше ніж 4 агрегати (РЕ п. 2.1.4).', en: 'Welded channel frame 900×280 mm, 4 anchor bolts, unit shaft height 248 mm. The foundation should weigh at least 4 times the unit (manual §2.1.4).'}, f: {uk: 'Тріщини, зруйнована підливка, ослаблені фундаментні болти — ослаблення й резонанс.', en: 'Cracks, broken grout, loose anchor bolts — looseness and resonance.'}, v: ['P_DE', 'M_DE'], p: ['align']},
   'frame.shims': {r: {uk: 'Підкладки під лапами двигуна — ними виставляють центрування по висоті.', en: 'Shims under the motor feet — they set the vertical alignment.'}, p: ['align']},
-  'frame.bolts_pump': {r: {uk: 'Болти М12 лап корпусу й кронштейна.', en: 'M12 bolts of the casing and bracket feet.'}, p: ['align']},
-  'frame.bolts_motor': {r: {uk: 'Болти М14 лап двигуна. Затягують хрестом після центрування.', en: 'M14 motor foot bolts. Tightened crosswise after alignment.'}, p: ['align', 'bush']},
+  'frame.bolts_casing': {r: {uk: '4 болти М12 (ключ 18) лап корпусу. Під час ремонту насоса їх не чіпають — корпус лишається на рамі й трубах.', en: '4 M12 bolts (18 mm spanner) of the casing feet. They stay put during pump repairs — the casing stays on the frame and pipes.'}},
+  'frame.bolts_foot': {r: {uk: '2 болти М12 (ключ 18) лапи кронштейна; їх відкручують, коли ротор виймають назад.', en: '2 M12 bolts (18 mm spanner) of the bracket foot; they come out when the rotor is pulled back.'}, p: ['bear', 'ring']},
+  'frame.bolts_motor': {r: {uk: '4 болти М14 (ключ 22) лап двигуна. Затягують хрестом після центрування.', en: '4 M14 bolts (22 mm spanner) of the motor feet. Tightened crosswise after alignment.'}, p: ['align', 'bush']},
   'frame.anchors': {r: {uk: 'Фундаментні болти М16 у колодязях, залитих розчином.', en: 'M16 anchor bolts in grouted pockets.'}}
 };
 
@@ -522,7 +538,7 @@ const FAULTS = [
    read: {uk: 'Якщо після центрування 2× повертається за кілька тижнів — перевірте втулки.', en: 'If 2× comes back within weeks after alignment — check the bushings.'},
    causes: {uk: 'Старіння гуми, розцентрування, часті пуски, мастило на гумі.', en: 'Aged rubber, misalignment, frequent starts, oil on the rubber.'},
    todo: {uk: 'Процедура «Заміна втулок муфти», потім перевірити центрування.', en: '"Coupling bushings" procedure, then check the alignment.'}},
-  {id: 'loose', sev: 'warn', cov: 'full', sens: ['P_DE', 'M_DE', 'M_NDE'], parts: ['frame.bolts_pump', 'frame.bolts_motor', 'pump.foot', 'frame.base', 'frame.anchors'], proc: 'align', cam: 'all',
+  {id: 'loose', sev: 'warn', cov: 'full', sens: ['P_DE', 'M_DE', 'M_NDE'], parts: ['frame.bolts_casing', 'frame.bolts_foot', 'frame.bolts_motor', 'pump.foot', 'frame.base', 'frame.anchors'], proc: 'align', cam: 'all',
    peaks: [[24.2, .2, '½×'], [F1, .6, '1×'], [96.7, .45, '2×'], [145, .35, '3×'], [193, .22, '4×', 1]],
    t: {uk: 'Ослаблення кріплення, «м’яка лапа»', en: 'Looseness, soft foot'},
    signs: {uk: 'Ряд гармонік 1×, 2×, 3×…, інколи ½×. Вертикальна вібрація біля ослабленої лапи помітно більша, ніж в інших точках.', en: 'A row of harmonics 1×, 2×, 3×…, sometimes ½×. Vertical vibration near the loose foot is clearly above the other points.'},
@@ -580,7 +596,56 @@ const FAULTS = [
    todo: {uk: 'Відкрити засувку на виході. Якщо насос перегрівся — зупинити, дати охолонути, перевірити сальник.', en: 'Open the discharge valve. If the pump overheated — stop it, let it cool, check the packing.'}}
 ];
 
-// ===================================================================== data: views and procedures
+// ===================================================================== data: tools, fastener sets, views
+const TOOLS = {
+  loto: {uk: 'Замок і бирка «Не вмикати», покажчик напруги', en: 'Lock, "Do not switch on" tag, voltage tester'},
+  key13: {uk: 'Ключ 13 мм (болти М8)', en: '13 mm spanner (M8 bolts)'},
+  key16: {uk: 'Ключ 16 мм (М10; на старих кріпленнях — 17)', en: '16 mm spanner (M10; 17 on older fasteners)'},
+  key18: {uk: 'Ключ 18 мм (М12; на старих болтах — 19)', en: '18 mm spanner (M12; 19 on older bolts)'},
+  key22: {uk: 'Ключ 22 мм', en: '22 mm spanner'},
+  torque: {uk: 'Динамометричний ключ (момент — за паспортом)', en: 'Torque wrench (torque per the manual)'},
+  bucket: {uk: 'Ємність для зливу, ганчір’я', en: 'Drain pan, rags'},
+  bar: {uk: 'Монтажка або віджимні болти', en: 'Pry bar or jacking bolts'},
+  jack: {uk: 'Віджимні гвинти М12', en: 'M12 jack screws'},
+  sling: {uk: 'Стропа або помічник — вузол важкий', en: 'Sling or a helper — the assembly is heavy'},
+  puller: {uk: 'Знімач двозахватний', en: 'Two-jaw puller'},
+  chisel: {uk: 'Викрутка або зубило — відігнути стопорну шайбу', en: 'Screwdriver or chisel to bend the tab washer'},
+  holder: {uk: 'Утримання вала (ключ на напівмуфту)', en: 'Shaft holder (spanner on the coupling half)'},
+  hook: {uk: 'Гачок-екстрактор набивки', en: 'Packing extractor hook'},
+  knife: {uk: 'Гострий ніж, оправка Ø35', en: 'Sharp knife, Ø35 mandrel'},
+  bush: {uk: 'Розрізна втулка або дерев’яна оправка', en: 'Split bush or wooden drift'},
+  light: {uk: 'Ліхтарик, дзеркальце', en: 'Torch, inspection mirror'},
+  micro: {uk: 'Мікрометр і нутромір', en: 'Micrometer and bore gauge'},
+  heater: {uk: 'Індукційний нагрівач або масляна ванна, термометр', en: 'Induction heater or oil bath, thermometer'},
+  gloves: {uk: 'Термостійкі рукавиці', en: 'Heat-resistant gloves'},
+  grease: {uk: 'Шприц для мастила, Літол-24', en: 'Grease gun, Litol-24'},
+  mallet: {uk: 'Мідна або гумова киянка, мідна проставка', en: 'Copper or rubber mallet, copper drift'},
+  indicator: {uk: 'Індикатори 0,01 мм на пристосуванні', en: '0.01 mm dial indicators on a bracket'},
+  shims: {uk: 'Набір підкладок (шим)', en: 'Shim set'},
+  feeler: {uk: 'Щуп і штангенциркуль', en: 'Feeler gauge and caliper'},
+  press: {uk: 'Прес або оправка для кільця', en: 'Press or ring drift'},
+  balance: {uk: 'Балансувальний верстат (сервіс)', en: 'Balancing machine (service shop)'},
+  gasket: {uk: 'Нова прокладка або кільце між корпусом і кронштейном', en: 'New gasket or O-ring between casing and bracket'},
+  tabw: {uk: 'Нова стопорна шайба', en: 'New tab washer'},
+  newpack: {uk: 'Шнур набивки 8×8 (ХБП-31 або АП-31)', en: '8×8 packing braid (KhBP-31 or AP-31)'},
+  newbear: {uk: 'Два підшипники 306, нові манжети', en: 'Two 306 bearings, new lip seals'},
+  newbush: {uk: 'Комплект гумових втулок муфти (6 пальців)', en: 'Coupling bushing set (6 pins)'},
+  newring: {uk: 'Нове щілинне кільце', en: 'New wear ring'},
+  flowbit: {uk: 'Додаток Flowbit', en: 'Flowbit app'}
+};
+const WRENCH = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10.6 1.6a3.6 3.6 0 0 0-3.4 4.8L1.9 11.7a1.4 1.4 0 0 0 2 2l5.3-5.3a3.6 3.6 0 0 0 4.8-3.4l-2.1 2.1-2.2-.6-.6-2.2z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>';
+
+const SETNAMES = {
+  'pump.bolts_flange': {uk: 'Болти кронштейна М12 (8 шт.)', en: 'Bracket bolts M12 (8 pcs)'},
+  'pump.bolts_cover_f': {uk: 'Болти передньої кришки підшипника М8', en: 'Front bearing cover bolts M8'},
+  'pump.bolts_cover_r': {uk: 'Болти задньої кришки підшипника М8', en: 'Rear bearing cover bolts M8'},
+  'seal.nuts': {uk: 'Гайки кришки сальника М10', en: 'Gland nuts M10'},
+  'coupling.guard_bolts': {uk: 'Болти огородження М10', en: 'Guard bolts M10'},
+  'frame.bolts_casing': {uk: 'Болти лап корпусу М12', en: 'Casing foot bolts M12'},
+  'frame.bolts_foot': {uk: 'Болти лапи кронштейна М12', en: 'Bracket foot bolts M12'},
+  'frame.bolts_motor': {uk: 'Болти лап двигуна М14', en: 'Motor foot bolts M14'}
+};
+
 // positions in mm in the model frame: x along the shaft (suction face 0), y lateral (sensor side negative), z up (floor 0)
 const VIEWS = {
   all: {t: [580, 0, 250], d: [-0.52, -0.75, 0.41], r: 2.35},
@@ -592,132 +657,329 @@ const VIEWS = {
   bracket: {t: [320, 0, 260], d: [-0.1, -1, 0.42], r: 0.85},
   coupling: {t: [505, 0, 250], d: [0.15, -1, 0.35], r: 0.7},
   motor: {t: [840, 0, 260], d: [0.3, -1, 0.42], r: 1.3},
-  feet: {t: [800, 0, 120], d: [0.25, -1, 0.3], r: 1.05},
+  feet: {t: [800, 0, 120], d: [0.3, -1, 0.25], r: 1.05},
   coupTop: {t: [520, 0, 250], d: [0.01, -0.25, 1], r: 0.95},
   wide: {t: [700, 0, 420], d: [-0.15, -1, 0.3], r: 2.7},
   shelf: {t: [430, 0, 520], d: [-0.1, -1, 0.25], r: 1.9},
+  flange: {t: [170, 0, 250], d: [0.8, -0.45, 0.5], r: 0.75},
   imp: {t: [250, 0, 450], d: [-0.6, -0.75, 0.3], r: 0.7}
 };
 const VIEW_CYCLE = ['all', 'front', 'top', 'end'];
 
+const ASSY = [240, 0, 0];      // rotor assembly pulled back by 240 mm
 const GROUPSETS = {
-  '@motor': ['motor.frame', 'motor.stator', 'motor.winding', 'motor.rotor', 'motor.key', 'motor.bearing_de', 'motor.bearing_nde', 'motor.shield_de', 'motor.shield_nde', 'motor.fan', 'motor.fan_cover', 'motor.terminal_box', 'motor.eyebolt', 'motor.nameplate', 'coupling.half_motor', 'sensor.M_DE', 'sensor.M_NDE', 'frame.bolts_motor'],
-  '@assy': ['pump.bracket', 'pump.foot', 'pump.cover', 'pump.cover_front', 'pump.cover_rear', 'pump.bearing_nde', 'pump.bearing_de', 'pump.grease_nipples', 'pump.temp_ports', 'pump.bolts_covers', 'seal.lips', 'seal.sleeve', 'seal.packing', 'seal.gland', 'seal.studs', 'rotor.impeller', 'rotor.impeller_nut', 'rotor.key_impeller', 'rotor.shaft', 'sensor.P_DE', 'sensor.P_NDE'],
-  '@cpump': ['coupling.half_pump', 'coupling.pins', 'coupling.bushings', 'rotor.key_coupling'],
-  '@seal': ['seal.studs', 'seal.gland', 'seal.packing']
+  '@motor': ['motor.frame', 'motor.stator', 'motor.winding', 'motor.rotor', 'motor.key', 'motor.bearing_de', 'motor.bearing_nde', 'motor.shield_de', 'motor.shield_nde', 'motor.fan', 'motor.fan_cover', 'motor.terminal_box', 'motor.eyebolt', 'motor.nameplate', 'coupling.half_motor', 'sensor.M_DE', 'sensor.M_NDE'],
+  '@assy': ['pump.bracket', 'pump.foot', 'pump.cover', 'pump.cover_front', 'pump.cover_rear', 'pump.bearing_nde', 'pump.bearing_de', 'pump.grease_nipples', 'pump.temp_ports', 'pump.bolts_cover_f', 'pump.bolts_cover_r', 'seal.lips', 'seal.sleeve', 'seal.packing', 'seal.gland', 'seal.studs', 'seal.nuts', 'rotor.impeller', 'rotor.impeller_nut', 'rotor.key_impeller', 'rotor.shaft', 'sensor.P_DE', 'sensor.P_NDE'],
+  '@cpump': ['coupling.half_pump', 'coupling.pins', 'coupling.bushings'],
+  '@shaftset': ['rotor.shaft', 'pump.bearing_nde', 'pump.bearing_de'],
+  '@coverset': ['pump.cover', 'seal.studs', 'seal.packing'],
+  '@shafts': []            // every rotating part, filled when the model loads
 };
-const expand = list => (list || []).flatMap(x => GROUPSETS[x] || [x]);
+const SETS = {};             // fastener set -> member pids, filled when the model loads
+function ids(x) {
+  const out = [];
+  for (const k of (Array.isArray(x) ? x : [x])) {
+    if (!k) continue;
+    if (GROUPSETS[k]) out.push(...ids(GROUPSETS[k]));
+    else if (SETS[k]) out.push(...SETS[k]);
+    else out.push(k);
+  }
+  return [...new Set(out)];
+}
 
-const SAFE = {t: {uk: 'Зупинити й знеструмити', en: 'Stop and isolate'}, focus: ['motor.terminal_box', 'pump.plug_drain'], cam: 'all',
-  d: {uk: 'Зупинити агрегат. Вимкнути живлення двигуна у двох місцях і повісити табличку «Не вмикати». Закрити засувки на вході й виході, скинути тиск і злити воду через нижню пробку (РЕ п. 4.3.6.1–4.3.6.3).', en: 'Stop the unit. Isolate the motor power in two places and hang a "Do not switch on" tag. Close the suction and discharge valves, release the pressure and drain through the bottom plug (manual §4.3.6.1–4.3.6.3).'}};
-const GUARD = {t: {uk: 'Зняти огородження муфти', en: 'Remove the coupling guard'}, focus: ['coupling.guard'], set: {'coupling.guard': [0, 0, 330]}, cam: 'coupling',
-  d: {uk: 'Відкрутити кріплення й зняти огородження. Оглянути муфту: гумовий пил під огородженням — ознака зношених втулок.', en: 'Unbolt and lift off the guard. Look at the coupling: rubber dust under the guard means worn bushings.'}};
-const PULL = [
-  {t: {uk: 'Відсунути двигун', en: 'Move the motor away'}, focus: ['frame.bolts_motor'], set: {'@motor': [260, 0, 0]}, cam: 'wide',
-   d: {uk: 'Відкрутити 4 болти М14 лап двигуна й відсунути його разом із напівмуфтою. Підкладки під лапами не губити й не міняти місцями — вони знадобляться для центрування.', en: 'Undo the 4 M14 motor foot bolts and slide the motor away with its coupling half. Keep the shims under the feet in place and in order — they are needed for alignment.'}},
-  {t: {uk: 'Зняти напівмуфту насоса', en: 'Remove the pump coupling half'}, focus: ['@cpump'], set: {'@cpump': [100, 0, 240]}, cam: 'wide',
-   d: {uk: 'Зняти напівмуфту насоса з пальцями знімачем (не молотком) і вийняти шпонку.', en: 'Pull the pump coupling half with its pins using a puller (not a hammer) and take out the key.'}},
-  {t: {uk: 'Вийняти ротор назад', en: 'Pull the rotor out backwards'}, focus: ['pump.bolts_flange', 'pump.bracket'], set: {'@assy': [240, 0, 0], 'pump.bolts_flange': [120, 0, 230]}, cam: 'wide',
-   d: {uk: 'Відкрутити болти лапи кронштейна й 8 болтів М12 фланця. Віджимними гвинтами відокремити кронштейн разом із кришкою й колесом і вийняти назад. Корпус лишається на трубах (РЕ п. 4.3.6.7–4.3.6.8).', en: 'Undo the bracket foot bolts and the 8 M12 flange bolts. Separate the bracket with the cover and impeller using the jack screws and pull it out backwards. The casing stays on the pipes (manual §4.3.6.7–4.3.6.8).'}},
-  {t: {uk: 'Зняти колесо', en: 'Remove the impeller'}, focus: ['rotor.impeller_nut', 'rotor.impeller', 'rotor.key_impeller'], set: {'rotor.impeller_nut': [120, 0, 300], 'rotor.impeller': [150, 0, 210], 'rotor.key_impeller': [190, 0, 330]}, cam: 'shelf',
-   d: {uk: 'Відігнути стопорну шайбу, відкрутити гайку-обтічник, зняти колесо, вийняти шпонку (РЕ п. 4.3.6.9–4.3.6.10). Позначити положення деталей — міняти їх місцями не можна.', en: 'Bend back the tab washer, undo the cap nut, take off the impeller and the key (manual §4.3.6.9–4.3.6.10). Mark the parts — they must not be swapped.'}}
-];
+// ===================================================================== data: procedures, one action per step
+// acts: u = unscrew (fasteners turn and back out along their axis, one after another, a spanner on the head),
+//       s = screw in (at = seat offset), m = move (by = relative, to = absolute offset), r = turn the shafts,
+//       hot / cool = mark parts as heated; `with` runs an act together with the previous one.
+const U = (k, o = {}) => Object.assign({u: k, hide: true}, o);
+const SC = (k, o = {}) => Object.assign({s: k}, o);
+const BY = (k, by, o = {}) => Object.assign({m: k, by}, o);
+const TO = (k, to, o = {}) => Object.assign({m: k, to}, o);
+const CROSS8 = [1, 5, 3, 7, 2, 6, 4, 8], CROSS4 = [1, 4, 2, 3], OPP4 = [1, 3, 2, 4];
+const step = (uk, en, duk, den, o) => Object.assign({t: {uk, en}, d: {uk: duk, en: den}}, o);
+
+const P = {
+  safe: step('Зупинити й знеструмити', 'Stop and isolate',
+    'Зупинити агрегат. Вимкнути живлення двигуна у двох місцях, повісити замок і бирку «Не вмикати», перевірити відсутність напруги. Закрити засувки на вході й виході (РЕ п. 4.3.6.1–4.3.6.2).',
+    'Stop the unit. Isolate the motor power in two places, fit a lock and a "Do not switch on" tag, prove it dead. Close the suction and discharge valves (manual §4.3.6.1–4.3.6.2).',
+    {tools: ['loto'], focus: ['motor.terminal_box'], cam: 'all'}),
+  drain: step('Злити воду', 'Drain the pump',
+    'Підставити ємність і відкрутити нижню пробку М12×1,5. Дочекатися, поки вода стече (РЕ п. 4.3.6.3). Пробку відкласти — вона знадобиться при складанні.',
+    'Put a pan under the casing and undo the bottom M12×1.5 plug. Let the water run out (manual §4.3.6.3). Keep the plug for reassembly.',
+    {tools: ['key22', 'bucket'], acts: [U('pump.plug_drain')], cam: 'pump'}),
+  gBolts: step('Відкрутити болти огородження', 'Undo the guard bolts',
+    'Чотири болти М10 тримають огородження муфти на рамі. Відкрутити по черзі й скласти в коробку.',
+    'Four M10 bolts hold the coupling guard to the frame. Undo them one by one and put them in a box.',
+    {tools: ['key16'], acts: [U('coupling.guard_bolts')], cam: 'coupling', ghost: true}),
+  gOff: step('Зняти огородження', 'Lift off the guard',
+    'Підняти огородження. Гумовий пил під ним — ознака зношених втулок муфти.',
+    'Lift the guard off. Rubber dust under it means worn coupling bushings.',
+    {acts: [BY('coupling.guard', [0, 0, 330], {hide: true})], cam: 'coupling'}),
+  mBolts: step('Відкрутити болти лап двигуна', 'Undo the motor foot bolts',
+    'Чотири болти М14 — хрестом: спершу два по діагоналі, потім два інші. Підкладки під лапами не чіпати й не міняти місцями — вони тримають центрування.',
+    'Four M14 bolts, crosswise: two on one diagonal first, then the other two. Leave the shims under the feet in place and in order — they hold the alignment.',
+    {tools: ['key22'], acts: [U('frame.bolts_motor', {order: CROSS4})], cam: 'feet', ghost: true}),
+  mAway: step('Відсунути двигун', 'Move the motor away',
+    'Відсунути двигун по рамі разом із напівмуфтою, поки пальці муфти не вийдуть з її отворів.',
+    'Slide the motor back along the frame with its coupling half until the coupling pins are clear.',
+    {tools: ['bar'], acts: [BY('@motor', [260, 0, 0], {dur: 1.8})], cam: 'wide'}),
+  cpOff: step('Зняти напівмуфту насоса', 'Pull the pump coupling half',
+    'Поставити знімач і стягнути напівмуфту з вала рівно, без перекосу. Не бити молотком — постраждають підшипники. Вийняти шпонку.',
+    'Fit a puller and draw the coupling half off the shaft squarely. Do not hammer it — that damages the bearings. Take out the key.',
+    {tools: ['puller'], acts: [BY('@cpump', [70, 0, 0]), BY('@cpump', [0, 0, 240], {hide: true}), BY('rotor.key_coupling', [0, 0, 190], {hide: true})], cam: 'coupling'}),
+  fBolts: step('Відкрутити болти лапи кронштейна', 'Undo the bracket foot bolts',
+    'Два болти М12 тримають лапу кронштейна на рамі. Болти лап корпусу не чіпати — корпус лишається на місці.',
+    'Two M12 bolts hold the bracket foot to the frame. Leave the casing foot bolts alone — the casing stays in place.',
+    {tools: ['key18'], acts: [U('frame.bolts_foot')], cam: 'bracket', ghost: true}),
+  flBolts: step('Відкрутити 8 болтів кронштейна', 'Undo the 8 bracket bolts',
+    'Болти М12 тримають кронштейн на корпусі. Відкручувати хрестом — кожен наступний навпроти попереднього, щоб фланець не перекосило (РЕ п. 4.3.6.7).',
+    'The M12 bolts hold the bracket to the casing. Undo them crosswise — each next one opposite the last, so the flange does not cock (manual §4.3.6.7).',
+    {tools: ['key18'], acts: [U('pump.bolts_flange', {order: CROSS8})], cam: 'flange', order: true, ghost: true}),
+  jack: step('Зрушити кронштейн віджимними гвинтами', 'Free the bracket with jack screws',
+    'Вкрутити віджимні гвинти у фланець кронштейна й рівномірно відтиснути його від корпусу на кілька міліметрів (РЕ п. 4.3.6.8).',
+    'Turn the jack screws into the bracket flange and press it evenly off the casing by a few millimetres (manual §4.3.6.8).',
+    {tools: ['jack', 'key18'], acts: [BY('@assy', [25, 0, 0], {dur: 1.6})], cam: 'bracket'}),
+  pull: step('Вийняти ротор назад', 'Pull the rotor out backwards',
+    'Вийняти кронштейн разом із кришкою, валом і колесом. Корпус лишається на трубах і рамі (РЕ п. 4.3.4).',
+    'Withdraw the bracket with the cover, shaft and impeller. The casing stays on the pipes and frame (manual §4.3.4).',
+    {tools: ['sling'], acts: [BY('@assy', [215, 0, 0], {dur: 2})], cam: 'wide'}),
+  nut: step('Відкрутити гайку-обтічник', 'Undo the impeller cap nut',
+    'Відігнути стопорну шайбу. Утримуючи вал від провертання, відкрутити гайку-обтічник (РЕ п. 4.3.6.9).',
+    'Bend back the tab washer. Holding the shaft, undo the cap nut (manual §4.3.6.9).',
+    {tools: ['chisel', 'key22', 'holder'], acts: [U('rotor.impeller_nut')], cam: 'imp'}),
+  imp: step('Зняти колесо й шпонку', 'Take off the impeller and key',
+    'Зняти колесо з вала; якщо сидить туго — знімачем за маточину, не за лопаті. Вийняти шпонку (РЕ п. 4.3.6.10). Позначити деталі — міняти їх місцями не можна.',
+    'Take the impeller off the shaft; if tight, use a puller on the hub, never on the vanes. Take out the key (manual §4.3.6.10). Mark the parts — they must not be swapped.',
+    {tools: ['puller'], acts: [BY('rotor.impeller', [-110, 0, 0]), BY('rotor.impeller', [0, 0, 230], {hide: true}), BY('rotor.key_impeller', [0, 0, 170], {hide: true})], cam: 'imp'}),
+
+  // reassembly
+  impOn: step('Поставити шпонку й колесо', 'Fit the key and impeller',
+    'Шпонку в паз вала, колесо насадити до упору в бурт.',
+    'Key into the shaft slot, push the impeller home against the shoulder.',
+    {acts: [TO('rotor.key_impeller', ASSY), TO('rotor.impeller', [ASSY[0] - 110, 0, 0]), TO('rotor.impeller', ASSY)], cam: 'imp'}),
+  nutOn: step('Закрутити гайку-обтічник', 'Tighten the cap nut',
+    'Поставити нову стопорну шайбу, закрутити гайку, утримуючи вал, і загнути шайбу на грані гайки в двох місцях (РЕ п. 4.3.6.14–4.3.6.15).',
+    'Fit a new tab washer, tighten the nut while holding the shaft, and bend the washer onto the nut flats in two places (manual §4.3.6.14–4.3.6.15).',
+    {tools: ['tabw', 'key22', 'holder'], acts: [SC('rotor.impeller_nut', {at: ASSY})], cam: 'imp'}),
+  rotorIn: step('Завести ротор у корпус', 'Slide the rotor into the casing',
+    'Поставити нову прокладку. Завести вузол у корпус рівно, без перекосу. Зазор між колесом і кришкою — 3 ± 0,5 мм (РЕ п. 4.3.6.15).',
+    'Fit a new gasket. Slide the assembly into the casing squarely. Impeller-to-cover gap — 3 ± 0.5 mm (manual §4.3.6.15).',
+    {tools: ['gasket', 'sling', 'feeler'], acts: [TO('@assy', [0, 0, 0], {dur: 2.2})], cam: 'bracket'}),
+  flOn: step('Закрутити 8 болтів кронштейна хрестом', 'Tighten the 8 bracket bolts crosswise',
+    'Спершу всі болти від руки, потім затягнути хрестом за два проходи (РЕ п. 4.3.6.16).',
+    'Run all bolts in by hand first, then tighten crosswise in two passes (manual §4.3.6.16).',
+    {tools: ['key18', 'torque'], acts: [SC('pump.bolts_flange', {order: CROSS8})], cam: 'flange', order: true, ghost: true}),
+  fOn: step('Закрутити болти лапи кронштейна', 'Tighten the bracket foot bolts',
+    'Лапа має прилягати до рами без зазору; якщо є зазор — підкласти шиму, інакше буде «м’яка лапа».',
+    'The foot must sit on the frame with no gap; shim any gap, or you get a soft foot.',
+    {tools: ['key18', 'shims'], acts: [SC('frame.bolts_foot')], cam: 'bracket', ghost: true}),
+  cpOn: step('Насадити напівмуфту насоса', 'Fit the pump coupling half',
+    'Шпонку в паз, напівмуфту насадити до бурта. Якщо туго — злегка підігріти напівмуфту, а не бити по ній.',
+    'Key into the slot, push the coupling half on to the shoulder. If tight — warm the half slightly rather than hitting it.',
+    {tools: ['mallet'], acts: [TO('rotor.key_coupling', [0, 0, 0]), TO('@cpump', [70, 0, 0]), TO('@cpump', [0, 0, 0])], cam: 'coupling'}),
+  mBack: step('Повернути двигун', 'Bring the motor back',
+    'Посунути двигун на його підкладки й ввести пальці у втулки напівмуфти двигуна (РЕ п. 4.3.6.24).',
+    'Slide the motor back onto its shims and guide the pins into the motor half (manual §4.3.6.24).',
+    {tools: ['bar'], acts: [TO('@motor', [0, 0, 0], {dur: 1.8})], cam: 'wide'}),
+  mbOn: step('Наживити болти двигуна', 'Fit the motor bolts snug',
+    'Закрутити 4 болти М14 хрестом, поки що без остаточної затяжки — її роблять після центрування.',
+    'Run the 4 M14 bolts in crosswise, not fully tight yet — that comes after alignment.',
+    {tools: ['key22'], acts: [SC('frame.bolts_motor', {order: CROSS4})], cam: 'feet', ghost: true}),
+  align: step('Відцентрувати агрегат', 'Align the unit',
+    'Виконати процедуру «Центрування». Без перевірки центрування агрегат пускати заборонено (РЕ п. 2.3.9).',
+    'Run the "Alignment" procedure. Starting the unit without an alignment check is forbidden (manual §2.3.9).',
+    {tools: ['indicator'], focus: ['coupling.half_pump', 'coupling.half_motor'], cam: 'coupling', link: 'align'}),
+  gOn: step('Поставити огородження', 'Refit the guard',
+    'Опустити огородження й закрутити 4 болти М10. Працювати без огородження заборонено (РЕ п. 3.4.4).',
+    'Lower the guard and fit the 4 M10 bolts. Running without it is forbidden (manual §3.4.4).',
+    {tools: ['key16'], acts: [TO('coupling.guard', [0, 0, 0]), SC('coupling.guard_bolts')], cam: 'coupling', ghost: true}),
+  fill: step('Закрутити пробку й заповнити насос', 'Refit the plug and prime',
+    'Закрутити зливну пробку. Відкрити засувку на вході, відкрутити верхню пробку й випускати повітря, поки не піде вода без бульбашок; закрутити пробку (РЕ п. 3.1.1).',
+    'Refit the drain plug. Open the suction valve, undo the top plug and bleed until water comes without bubbles; refit the plug (manual §3.1.1).',
+    {tools: ['key22'], acts: [SC('pump.plug_drain'), U('pump.plug_vent', {hide: false, travel: 6}), {wait: .6}, SC('pump.plug_vent')], cam: 'pump'}),
+  test: step('Пробний пуск', 'Test run',
+    'Перший пуск на 2–3 с — напрям обертання за стрілкою на корпусі; потім 4–5 хв — шум, вібрація, нагрів. Засувку на виході відкрити одразу після пуску (на закриту — не довше 2 хв). Після обкатки записати у Flowbit новий еталон.',
+    'First start for 2–3 s — check the direction against the arrow; then 4–5 min — noise, vibration, heat. Open the discharge valve right after start-up (no more than 2 min closed). After the run-in save a new baseline in Flowbit.',
+    {tools: ['flowbit'], focus: ['sensor.P_DE', 'sensor.P_NDE', 'sensor.M_DE'], cam: 'all', spin: true})
+};
 
 const PROCS = [
   {id: 'pack', t: {uk: 'Заміна сальникової набивки', en: 'Repack the gland'}, when: {uk: 'Сильний витік, сухий гарячий сальник, кришку вже нікуди тягнути.', en: 'Heavy leak, a dry hot packing, no take-up left on the gland.'}, steps: [
-    SAFE,
-    {t: {uk: 'Відпустити кришку сальника', en: 'Release the gland'}, focus: ['seal.studs', 'seal.gland'], set: {'seal.gland': [24, 0, 0]}, cam: 'seal', clip: true,
-     d: {uk: 'Через вікно кронштейна відкрутити гайки двох шпильок М10 і відвести кришку сальника по валу до упору.', en: 'Through the bracket window undo the nuts of the two M10 studs and slide the gland back along the shaft.'}},
-    {t: {uk: 'Вийняти старі кільця', en: 'Pull out the old rings'}, focus: ['seal.packing'], set: {'seal.packing': [40, 0, 175]}, cam: 'seal', clip: true,
-     d: {uk: 'Гачком-екстрактором вийняти всі 4 кільця. Не дряпати втулку вала й стінки камери.', en: 'Pull all 4 rings with a packing extractor. Do not scratch the sleeve or the box walls.'}},
-    {t: {uk: 'Оглянути захисну втулку', en: 'Inspect the shaft sleeve'}, focus: ['seal.sleeve'], cam: 'seal', clip: true,
-     d: {uk: 'Очистити камеру. Якщо на втулці кільцеві борозни чи сходинка — нова набивка не втримає: втулку міняють (часткове розбирання, як у процедурі «Заміна підшипників 306», кроки 3–7).', en: 'Clean the box. Circular grooves or a step on the sleeve mean new packing will not seal: replace the sleeve (partial dismantling as in "Replace 306 bearings", steps 3–7).'}},
-    {t: {uk: 'Нарізати нові кільця', en: 'Cut new rings'}, focus: ['seal.packing'], cam: 'seal', clip: true,
-     d: {uk: 'Шнур 8×8 (ХБП-31 або АП-31) намотати на оправку Ø35 — діаметр втулки — і нарізати 4 кільця косим різом під 45°. Кільце має сходитися без зазору й без нахлесту.', en: 'Wrap 8×8 braid (KhBP-31 or AP-31) round a Ø35 mandrel — the sleeve diameter — and cut 4 rings with a 45° skive cut. Each ring must close with no gap and no overlap.'}},
-    {t: {uk: 'Укласти кільця по одному', en: 'Fit the rings one by one'}, focus: ['seal.packing'], set: {'seal.packing': [0, 0, 0]}, cam: 'seal', clip: true,
-     d: {uk: 'Кожне кільце досилати в камеру окремо розрізною втулкою. Стики сусідніх кілець зміщувати на 90°.', en: 'Push each ring home separately with a split bush. Stagger the joints of neighbouring rings by 90°.'}},
-    {t: {uk: 'Затягнути кришку', en: 'Tighten the gland'}, focus: ['seal.gland', 'seal.studs'], set: {'seal.gland': [0, 0, 0]}, cam: 'seal', clip: true,
-     d: {uk: 'Поставити кришку сальника, затягнути гайки рукою рівномірно, потім ключем стиснути набивку приблизно на 10 % її висоти. Кришка не повинна перекошуватись.', en: 'Fit the gland, run the nuts down evenly by hand, then compress the packing by about 10 % of its height with a spanner. The gland must stay square.'}},
-    {t: {uk: 'Пуск і доведення', en: 'Start-up and run-in'}, focus: ['seal.gland'], cam: 'bracket', spin: true,
-     d: {uk: 'Провернути вал рукою — має йти вільно. Пустити насос: витік має бути крапельним, а не струменем. Підтягувати по пів грані на зупиненому агрегаті, не частіше ніж раз на 15 хв, поки витік не стабілізується. Сухий сальник — це перегрів і знос втулки.', en: 'Turn the shaft by hand — it must turn freely. Start the pump: the leak must drip, not jet. Tighten half a flat with the unit stopped, no more than once per 15 min, until the leak settles. A dry packing means heat and sleeve wear.'}},
-    {t: {uk: 'Контроль у Flowbit', en: 'Check in Flowbit'}, focus: ['sensor.P_NDE'], cam: 'bracket', spin: true,
-     d: {uk: 'Наступну добу стежити за температурою на P-NDE: після притирання набивки вона має стабілізуватися. Записати заміну в журнал.', en: 'For the next day watch the temperature at P-NDE: once the packing beds in it must settle. Log the repack.'}}
+    P.safe,
+    step('Відкрутити гайки кришки сальника', 'Undo the gland nuts',
+      'Через вікно кронштейна відкрутити дві гайки М10 зі шпильок.', 'Through the bracket window undo the two M10 nuts from the studs.',
+      {tools: ['key16'], acts: [U('seal.nuts', {hide: false, tray: [30, 0, 0]})], cam: 'seal', clip: true}),
+    step('Відвести кришку сальника', 'Slide the gland back',
+      'Відвести кришку сальника по валу до упору — відкриється камера з набивкою.', 'Slide the gland back along the shaft — the stuffing box opens up.',
+      {acts: [BY('seal.gland', [24, 0, 0])], cam: 'seal', clip: true}),
+    step('Вийняти старі кільця', 'Pull out the old rings',
+      'Гачком-екстрактором вийняти всі 4 кільця. Не дряпати втулку вала й стінки камери.', 'Pull all 4 rings with a packing extractor. Do not scratch the sleeve or the box walls.',
+      {tools: ['hook'], acts: [TO('seal.packing', [40, 0, 175], {dur: 1.4})], cam: 'seal', clip: true}),
+    step('Оглянути захисну втулку', 'Inspect the shaft sleeve',
+      'Очистити камеру. Кільцеві борозни чи сходинка на втулці — нова набивка не втримає: втулку міняють (часткове розбирання, як у процедурі «Заміна підшипників 306»).',
+      'Clean the box. Circular grooves or a step on the sleeve mean new packing will not seal: replace the sleeve (partial dismantling as in "Replace the 306 bearings").',
+      {tools: ['light'], focus: ['seal.sleeve'], cam: 'seal', clip: true}),
+    step('Нарізати нові кільця', 'Cut new rings',
+      'Намотати шнур 8×8 на оправку Ø35 — діаметр втулки — і нарізати 4 кільця косим різом під 45°. Кільце має сходитися без зазору й без нахлесту.',
+      'Wrap 8×8 braid round a Ø35 mandrel — the sleeve diameter — and cut 4 rings with a 45° skive cut. Each ring must close with no gap and no overlap.',
+      {tools: ['newpack', 'knife'], focus: ['seal.packing'], cam: 'seal', clip: true}),
+    step('Укласти кільця по одному', 'Fit the rings one by one',
+      'Кожне кільце досилати в камеру окремо. Стики сусідніх кілець зміщувати на 90°.', 'Push each ring home separately. Stagger the joints of neighbouring rings by 90°.',
+      {tools: ['bush'], acts: [TO('seal.packing', [0, 0, 0], {dur: 1.8})], cam: 'seal', clip: true}),
+    step('Поставити кришку сальника', 'Fit the gland',
+      'Посунути кришку сальника до набивки рівно, без перекосу.', 'Slide the gland up to the packing, square.',
+      {acts: [TO('seal.gland', [0, 0, 0])], cam: 'seal', clip: true}),
+    step('Закрутити гайки рівномірно', 'Tighten the nuts evenly',
+      'Закрутити гайки рукою, потім ключем по черзі — по пів оберту, щоб стиснути набивку приблизно на 10 % її висоти.',
+      'Run the nuts down by hand, then with the spanner in turn — half a turn at a time — to compress the packing by about 10 % of its height.',
+      {tools: ['key16'], acts: [SC('seal.nuts')], cam: 'seal', clip: true}),
+    step('Пуск і доведення', 'Start-up and run-in',
+      'Провернути вал рукою — має йти вільно. Пустити насос: витік має бути крапельним, а не струменем. Підтягувати гайки по пів грані на зупиненому агрегаті, не частіше ніж раз на 15 хв.',
+      'Turn the shaft by hand — it must turn freely. Start the pump: the leak must drip, not jet. Tighten the nuts half a flat with the unit stopped, no more than once per 15 min.',
+      {tools: ['key16'], focus: ['seal.nuts'], cam: 'bracket', spin: true}),
+    step('Контроль у Flowbit', 'Check in Flowbit',
+      'Наступну добу стежити за температурою на P-NDE: після притирання набивки вона має стабілізуватися. Записати заміну в журнал.',
+      'For the next day watch the temperature at P-NDE: once the packing beds in it must settle. Log the repack.',
+      {tools: ['flowbit'], focus: ['sensor.P_NDE'], cam: 'bracket', spin: true})
   ]},
-  {id: 'bear', t: {uk: 'Заміна підшипників 306', en: 'Replace the 306 bearings'}, when: {uk: 'Ріст BPFO/шуму й температури, нагрів понад 90 °C, вода в мастилі.', en: 'Rising BPFO/noise and temperature, above 90 °C, water in the grease.'}, steps: [
-    SAFE, GUARD, ...PULL,
-    {t: {uk: 'Зняти кришку корпусу й сальник', en: 'Remove the cover and packing'}, focus: ['pump.cover', 'seal.sleeve', '@seal'], set: {'pump.cover': [90, 0, 340], 'seal.studs': [90, 0, 340], 'seal.packing': [150, 0, 450], 'seal.gland': [205, 0, 420], 'seal.sleeve': [250, 0, 500]}, cam: 'shelf',
-     d: {uk: 'Зняти кришку корпусу із сальниковою камерою, вийняти набивку, зняти кришку сальника й захисну втулку.', en: 'Take off the casing cover with the stuffing box, remove the packing, the gland and the shaft sleeve.'}},
-    {t: {uk: 'Зняти кришки підшипників', en: 'Remove the bearing covers'}, focus: ['pump.cover_front', 'pump.cover_rear', 'pump.bolts_covers', 'seal.lips'], set: {'pump.cover_front': [160, 0, 560], 'pump.cover_rear': [430, 0, 330], 'pump.bolts_covers': [330, 0, 600], 'seal.lips': [310, 0, 640]}, cam: 'shelf',
-     d: {uk: 'Відкрутити болти М8 і зняти обидві кришки підшипників із манжетами.', en: 'Undo the M8 bolts and remove both bearing covers with their lip seals.'}},
-    {t: {uk: 'Вийняти вал із підшипниками', en: 'Withdraw the shaft with bearings'}, focus: ['rotor.shaft', 'pump.bearing_nde', 'pump.bearing_de'], set: {'rotor.shaft': [270, 0, 720], 'pump.bearing_nde': [270, 0, 720], 'pump.bearing_de': [270, 0, 720]}, cam: 'shelf',
-     d: {uk: 'Вийняти вал разом із підшипниками з корпусу підшипників у бік муфти.', en: 'Withdraw the shaft with both bearings out of the housing towards the coupling end.'}},
-    {t: {uk: 'Зняти старі підшипники', en: 'Pull off the old bearings'}, focus: ['pump.bearing_nde', 'pump.bearing_de'], set: {'pump.bearing_nde': [170, 0, 840], 'pump.bearing_de': [400, 0, 840]}, cam: 'shelf',
-     d: {uk: 'Зняти підшипники знімачем, упираючи його у внутрішнє кільце. Оглянути посадки вала Ø30 і корпусу Ø72: задири чи знос — вал або кронштейн у ремонт.', en: 'Pull the bearings with a puller bearing on the inner ring. Check the Ø30 shaft seats and Ø72 housing bores: scoring or wear sends the shaft or bracket to repair.'}},
-    {t: {uk: 'Нагріти й посадити нові', en: 'Heat and fit the new ones'}, focus: ['pump.bearing_nde', 'pump.bearing_de'], hot: ['pump.bearing_nde', 'pump.bearing_de'], set: {'pump.bearing_nde': [270, 0, 720], 'pump.bearing_de': [270, 0, 720]}, cam: 'shelf',
-     d: {uk: 'Нагріти нові підшипники 306 до 80–90 °C індукційним нагрівачем або в масляній ванні й посадити на вал до упору в бурт. Не бити по зовнішньому кільцю.', en: 'Heat the new 306 bearings to 80–90 °C with an induction heater or in an oil bath and push them onto the shaft against the shoulder. Never hit the outer ring.'}},
-    {t: {uk: 'Мастило й манжети', en: 'Grease and lip seals'}, focus: ['pump.bearing_nde', 'pump.bearing_de', 'seal.lips', 'pump.grease_nipples'], cam: 'shelf',
-     d: {uk: 'Заповнити підшипникові вузли мастилом Літол-24 (за РЕ — 0,04 кг на насос). Поставити нові манжети в кришки.', en: 'Pack the bearing housings with Litol-24 (0.04 kg per pump per the manual). Fit new lip seals in the covers.'}},
-    {t: {uk: 'Зібрати насос', en: 'Reassemble the pump'}, focus: ['rotor.impeller', 'pump.cover'], set: {'*': 0, 'coupling.guard': [0, 0, 330], '@motor': [260, 0, 0]}, cam: 'pump', clip: true,
-     d: {uk: 'Зібрати у зворотному порядку. Зазор між колесом і кришкою — 3 ± 0,5 мм; вал має провертатися рукою вільно. Болти кронштейна затягувати хрестом.', en: 'Reassemble in reverse order. Impeller-to-cover gap 3 ± 0.5 mm; the shaft must turn freely by hand. Tighten the bracket bolts crosswise.'}},
-    {t: {uk: 'Повернути двигун і відцентрувати', en: 'Return the motor and align'}, focus: ['coupling.half_pump', 'coupling.half_motor'], set: {'@motor': [0, 0, 0]}, cam: 'coupling', link: 'align',
-     d: {uk: 'Поставити двигун на його підкладки, з’єднати муфту й відцентрувати агрегат.', en: 'Set the motor back on its shims, join the coupling and align the unit.'}},
-    {t: {uk: 'Пробний пуск і еталон', en: 'Test run and baseline'}, focus: ['sensor.P_DE', 'sensor.P_NDE'], set: {'coupling.guard': [0, 0, 0]}, cam: 'all', spin: true,
-     d: {uk: 'Поставити огородження. Перший пуск на 2–3 с — перевірити напрям обертання; потім 4–5 хв — шум, вібрація, нагрів. Після обкатки (72 год) записати у Flowbit новий еталон.', en: 'Refit the guard. First start for 2–3 s — check the direction; then 4–5 min — noise, vibration, heat. After the run-in (72 h) save a new baseline in Flowbit.'}}
+  {id: 'bear', t: {uk: 'Заміна підшипників 306', en: 'Replace the 306 bearings'}, when: {uk: 'Ріст BPFO і шуму, нагрів понад 90 °C, вода в мастилі.', en: 'Rising BPFO and noise, above 90 °C, water in the grease.'}, steps: [
+    P.safe, P.drain, P.gBolts, P.gOff, P.mBolts, P.mAway, P.cpOff, P.fBolts, P.flBolts, P.jack, P.pull, P.nut, P.imp,
+    step('Відкрутити гайки кришки сальника', 'Undo the gland nuts', 'Відкрутити дві гайки М10.', 'Undo the two M10 nuts.',
+      {tools: ['key16'], acts: [U('seal.nuts')], cam: 'bracket', ghost: true}),
+    step('Зняти кришку корпусу', 'Take off the casing cover',
+      'Стягнути кришку корпусу з вала в бік колеса разом зі шпильками й набивкою.', 'Draw the casing cover off the shaft towards the impeller end, with its studs and packing.',
+      {tools: ['mallet'], acts: [BY('@coverset', [-150, 0, 0]), BY('@coverset', [0, 0, 300], {hide: true})], cam: 'bracket'}),
+    step('Зняти кришку сальника й втулку', 'Remove the gland and sleeve',
+      'Зсунути з вала кришку сальника й захисну втулку. Втулку оглянути: борозни — міняти.', 'Slide the gland and the shaft sleeve off. Check the sleeve: grooves mean a new one.',
+      {acts: [BY('seal.gland', [-170, 0, 0]), BY('seal.gland', [0, 0, 380], {hide: true}), BY('seal.sleeve', [-200, 0, 0]), BY('seal.sleeve', [0, 0, 450], {hide: true})], cam: 'bracket'}),
+    step('Відкрутити болти кришок підшипників', 'Undo the bearing cover bolts',
+      'По 4 болти М8 на задній і передній кришці — навхрест.', '4 M8 bolts on the rear and on the front cover — crosswise.',
+      {tools: ['key13'], acts: [U('pump.bolts_cover_r', {order: OPP4}), U('pump.bolts_cover_f', {order: OPP4})], cam: 'bracket', ghost: true}),
+    step('Зняти кришки підшипників', 'Remove the bearing covers',
+      'Зняти задню кришку в бік муфти, передню — в бік колеса, разом із манжетами.', 'Take the rear cover off towards the coupling and the front one towards the impeller, with the lip seals.',
+      {acts: [BY('pump.cover_rear', [60, 0, 0]), BY('pump.cover_rear', [0, 0, 220], {hide: true}), BY(['pump.cover_front', 'seal.lips'], [-120, 0, 0]), BY(['pump.cover_front', 'seal.lips'], [0, 0, 270], {hide: true})], cam: 'bracket'}),
+    step('Вийняти вал із підшипниками', 'Withdraw the shaft with bearings',
+      'Вибити вал разом із підшипниками в бік муфти легкими ударами через мідну проставку.', 'Drive the shaft with both bearings out towards the coupling end with light blows through a copper drift.',
+      {tools: ['mallet'], acts: [BY('@shaftset', [120, 0, 0], {dur: 1.6}), BY('@shaftset', [0, 0, 380])], cam: 'shelf'}),
+    step('Зняти старі підшипники', 'Pull off the old bearings',
+      'Зняти підшипники знімачем, упираючи його у внутрішнє кільце.', 'Pull the bearings off with a puller bearing on the inner ring.',
+      {tools: ['puller'], acts: [BY('pump.bearing_de', [150, 0, 0]), BY('pump.bearing_nde', [-210, 0, 0])], cam: 'shelf'}),
+    step('Оглянути посадки', 'Check the seats',
+      'Посадки вала Ø30 і корпусу Ø72 мають бути без задирів і зносу; інакше вал чи кронштейн — у ремонт.', 'The Ø30 shaft seats and Ø72 housing bores must have no scoring or wear; otherwise the shaft or bracket goes for repair.',
+      {tools: ['micro'], focus: ['rotor.shaft', 'pump.bracket'], cam: 'shelf'}),
+    step('Нагріти нові підшипники', 'Heat the new bearings',
+      'Нагріти нові підшипники 306 до 80–90 °C. Відкритий вогонь не використовувати.', 'Heat the new 306 bearings to 80–90 °C. No open flame.',
+      {tools: ['newbear', 'heater', 'gloves'], acts: [{hot: ['pump.bearing_nde', 'pump.bearing_de']}], focus: ['pump.bearing_nde', 'pump.bearing_de'], cam: 'shelf'}),
+    step('Посадити підшипники на вал', 'Fit the bearings on the shaft',
+      'Посадити гарячі підшипники до упору в бурт, тиснучи тільки на внутрішнє кільце. Дати охолонути на повітрі.', 'Push the hot bearings on against the shoulder, pressing the inner ring only. Let them cool in air.',
+      {tools: ['gloves'], acts: [TO('pump.bearing_nde', [ASSY[0] + 120, 0, 380]), TO('pump.bearing_de', [ASSY[0] + 120, 0, 380], {with: true}), {wait: .4}, {cool: ['pump.bearing_nde', 'pump.bearing_de']}], cam: 'shelf'}),
+    step('Мастило й манжети', 'Grease and lip seals',
+      'Заповнити підшипники мастилом Літол-24 (за РЕ — 0,04 кг на насос). Поставити нові манжети в кришки.', 'Pack the bearings with Litol-24 (0.04 kg per pump per the manual). Fit new lip seals in the covers.',
+      {tools: ['grease'], focus: ['pump.bearing_nde', 'pump.bearing_de', 'seal.lips'], cam: 'shelf'}),
+    step('Вставити вал у кронштейн', 'Fit the shaft into the bracket',
+      'Завести вал із підшипниками в корпус підшипників до упору.', 'Push the shaft with its bearings into the bearing housing until it seats.',
+      {tools: ['mallet'], acts: [BY('@shaftset', [0, 0, -380]), TO('@shaftset', ASSY, {dur: 1.6})], cam: 'bracket'}),
+    step('Поставити кришки підшипників', 'Refit the bearing covers',
+      'Поставити обидві кришки з новими манжетами й закрутити болти М8 навхрест.', 'Fit both covers with new lip seals and tighten the M8 bolts crosswise.',
+      {tools: ['key13'], acts: [TO(['pump.cover_front', 'seal.lips'], ASSY), TO('pump.cover_rear', ASSY, {with: true}), SC('pump.bolts_cover_f', {order: OPP4, at: ASSY}), SC('pump.bolts_cover_r', {order: OPP4, at: ASSY})], cam: 'bracket', ghost: true}),
+    step('Втулка, кришка сальника, кришка корпусу', 'Sleeve, gland and casing cover',
+      'Надіти захисну втулку, кришку сальника, поставити кришку корпусу. Набивку — нову (див. «Заміна сальникової набивки»).', 'Fit the shaft sleeve and the gland, then the casing cover. Use new packing (see "Repack the gland").',
+      {tools: ['newpack'], acts: [TO('seal.sleeve', ASSY), TO('seal.gland', [ASSY[0] + 24, 0, 0]), TO('@coverset', ASSY, {dur: 1.4})], cam: 'bracket'}),
+    step('Закрутити гайки сальника', 'Fit the gland nuts',
+      'Підвести кришку сальника й закрутити гайки рівномірно.', 'Bring the gland up and run the nuts down evenly.',
+      {tools: ['key16'], acts: [TO('seal.gland', ASSY), SC('seal.nuts', {at: ASSY})], cam: 'bracket', ghost: true}),
+    P.impOn, P.nutOn, P.rotorIn, P.flOn, P.fOn, P.cpOn, P.mBack, P.mbOn, P.align, P.gOn, P.fill, P.test
   ]},
-  {id: 'align', t: {uk: 'Центрування насоса й двигуна', en: 'Pump-to-motor alignment'}, when: {uk: 'Після монтажу, будь-якого ремонту з переміщенням двигуна, при високій осьовій 1× і 2×.', en: 'After installation, after any repair that moves the motor, at high axial 1× and 2×.'}, steps: [
-    SAFE, GUARD,
-    {t: {uk: 'Перевірити «м’яку лапу»', en: 'Check for soft foot'}, focus: ['frame.bolts_motor', 'frame.shims'], cam: 'feet',
-     d: {uk: 'По черзі відпускати кожен болт лапи двигуна з індикатором на лапі. Якщо лапа піднімається більше ніж приблизно на 0,05 мм — підкласти шиму саме під цю лапу.', en: 'Loosen each motor foot bolt in turn with a dial indicator on the foot. If the foot lifts more than about 0.05 mm, shim that foot.'}},
-    {t: {uk: 'Поставити індикатори', en: 'Set up the indicators'}, focus: ['coupling.half_pump', 'coupling.half_motor'], cam: 'coupling',
-     d: {uk: 'Закріпити пристосування з індикатором (ціна поділки 0,01 мм) на напівмуфті насоса: одна ніжка — на ободі напівмуфти двигуна (радіальне зміщення), друга — на торці (кутове).', en: 'Clamp the fixture with a dial indicator (0.01 mm resolution) on the pump half: one plunger on the rim of the motor half (offset), the other on its face (angle).'}},
-    {t: {uk: 'Зняти покази', en: 'Take readings'}, focus: ['coupling.half_pump', 'coupling.half_motor'], cam: 'coupling', spin: true,
-     d: {uk: 'Провертати обидва вали разом і записувати покази в положеннях 0°, 90°, 180°, 270°. Розбіжність радіальних показів — не більше 0,12 мм (РЕ п. 2.3.10); краще тримати близько 0,05 мм.', en: 'Turn both shafts together and read at 0°, 90°, 180° and 270°. Radial spread — 0.12 mm max (manual §2.3.10); aim for about 0.05 mm.'}},
-    {t: {uk: 'Виправити по висоті', en: 'Correct vertically'}, focus: ['frame.shims'], set: {'@motor': [0, 0, 25]}, cam: 'feet',
-     d: {uk: 'Висоту виправляють підкладками під лапи двигуна: однаково під усі чотири — для паралельного зміщення, різні спереду й ззаду — для кутового.', en: 'Correct the height with shims under the motor feet: equal under all four for offset, different front and rear for angle.'}},
-    {t: {uk: 'Виправити вбік', en: 'Correct sideways'}, focus: ['motor.frame'], set: {'@motor': [0, 18, 0]}, cam: 'coupTop',
-     d: {uk: 'Вбік двигун зсувають віджимними болтами або легкими ударами через мідну проставку, контролюючи індикатором.', en: 'Move the motor sideways with jacking bolts or light taps through a copper drift while watching the indicator.'}},
-    {t: {uk: 'Затягнути й перевірити', en: 'Tighten and re-check'}, focus: ['frame.bolts_motor'], set: {'@motor': [0, 0, 0]}, cam: 'feet',
-     d: {uk: 'Затягнути болти лап хрестом і зняти покази ще раз — після затяжки центрування часто зсувається.', en: 'Tighten the foot bolts crosswise and read again — alignment often shifts when the bolts are tightened.'}},
-    {t: {uk: 'Огородження й контроль', en: 'Guard and check'}, focus: ['sensor.P_DE', 'sensor.M_DE'], set: {'coupling.guard': [0, 0, 0]}, cam: 'coupling', spin: true,
-     d: {uk: 'Поставити огородження. У Flowbit осьова 1× і 2× на P-DE і M-DE мають помітно впасти — збережіть новий еталон.', en: 'Refit the guard. In Flowbit the axial 1× and 2× at P-DE and M-DE should drop clearly — save a new baseline.'}}
+  {id: 'align', t: {uk: 'Центрування насоса й двигуна', en: 'Pump-to-motor alignment'}, when: {uk: 'Після монтажу, ремонту з переміщенням двигуна, при високій осьовій 1× і 2×.', en: 'After installation, after a repair that moved the motor, at high axial 1× and 2×.'}, steps: [
+    P.safe, P.gBolts, P.gOff,
+    step('Перевірити «м’яку лапу»', 'Check for soft foot',
+      'По черзі відпускати кожен болт лапи двигуна з індикатором на лапі й затягувати знову. Якщо лапа піднімається більше ніж приблизно на 0,05 мм — підкласти шиму під цю лапу.',
+      'Loosen each motor foot bolt in turn with a dial indicator on the foot, then retighten. If the foot lifts more than about 0.05 mm, shim that foot.',
+      {tools: ['key22', 'indicator', 'shims'], acts: [1, 2, 3, 4].flatMap(n => [U('frame.bolt_motor.' + n, {hide: false, travel: 5}), SC('frame.bolt_motor.' + n)]), cam: 'feet', ghost: true}),
+    step('Поставити індикатори', 'Set up the indicators',
+      'Закріпити пристосування з індикатором на напівмуфті насоса: одна ніжка — на ободі напівмуфти двигуна (зміщення), друга — на торці (кут).',
+      'Clamp the indicator fixture on the pump half: one plunger on the rim of the motor half (offset), the other on its face (angle).',
+      {tools: ['indicator'], focus: ['coupling.half_pump', 'coupling.half_motor'], cam: 'coupling'}),
+    step('Зняти покази 0–90–180–270°', 'Read at 0–90–180–270°',
+      'Провертати обидва вали разом і записувати покази в чотирьох положеннях. Розбіжність радіальних показів — не більше 0,12 мм (РЕ п. 2.3.10); краще тримати близько 0,05 мм.',
+      'Turn both shafts together and read in four positions. Radial spread — 0.12 mm max (manual §2.3.10); aim for about 0.05 mm.',
+      {tools: ['indicator'], acts: [{r: '@shafts', turns: 1, dur: 4}], cam: 'coupling'}),
+    step('Відпустити болти двигуна', 'Loosen the motor bolts',
+      'Відпустити 4 болти лап двигуна на кілька обертів, хрестом.', 'Loosen the 4 motor foot bolts a few turns, crosswise.',
+      {tools: ['key22'], acts: [U('frame.bolts_motor', {hide: false, travel: 8, order: CROSS4})], cam: 'feet', ghost: true}),
+    step('Виправити по висоті', 'Correct the height',
+      'Підняти двигун і змінити підкладки: однаково під усі лапи — для паралельного зміщення, різні спереду й ззаду — для кута.',
+      'Lift the motor and change the shims: equal under all feet for offset, different front and rear for angle.',
+      {tools: ['shims', 'bar'], acts: [BY(['@motor', 'frame.bolts_motor'], [0, 0, 25]), {wait: .5}, BY(['@motor', 'frame.bolts_motor'], [0, 0, -25])], focus: ['frame.shims'], cam: 'feet'}),
+    step('Виправити вбік', 'Correct sideways',
+      'Зсунути двигун віджимними болтами або легкими ударами через мідну проставку, стежачи за індикатором.', 'Move the motor sideways with jacking bolts or light taps through a copper drift, watching the indicator.',
+      {tools: ['mallet', 'bar'], acts: [BY(['@motor', 'frame.bolts_motor'], [0, 16, 0]), BY(['@motor', 'frame.bolts_motor'], [0, -16, 0])], cam: 'coupTop'}),
+    step('Затягнути болти хрестом', 'Tighten the bolts crosswise',
+      'Затягнути 4 болти лап двигуна хрестом.', 'Tighten the 4 motor foot bolts crosswise.',
+      {tools: ['key22', 'torque'], acts: [SC('frame.bolts_motor', {order: CROSS4})], cam: 'feet', order: true, ghost: true}),
+    step('Перевірити ще раз', 'Re-check',
+      'Ще раз провернути вали й зняти покази — після затяжки центрування часто зсувається.', 'Turn the shafts and read again — alignment often shifts when the bolts are tightened.',
+      {tools: ['indicator'], acts: [{r: '@shafts', turns: 1, dur: 4}], cam: 'coupling'}),
+    P.gOn,
+    step('Контроль у Flowbit', 'Check in Flowbit',
+      'Пустити агрегат. Осьова 1× і 2× на P-DE і M-DE мають помітно впасти — зберегти новий еталон.', 'Start the unit. Axial 1× and 2× at P-DE and M-DE should drop clearly — save a new baseline.',
+      {tools: ['flowbit'], focus: ['sensor.P_DE', 'sensor.M_DE'], cam: 'coupling', spin: true})
   ]},
   {id: 'bush', t: {uk: 'Заміна втулок муфти', en: 'Replace the coupling bushings'}, when: {uk: 'Поштовхи на пуску, гумовий пил, 2× повертається після центрування.', en: 'Knocks at start-up, rubber dust, 2× returning after alignment.'}, steps: [
-    SAFE, GUARD,
-    {t: {uk: 'Відсунути двигун', en: 'Slide the motor back'}, focus: ['frame.bolts_motor'], set: {'@motor': [150, 0, 0]}, cam: 'coupling',
-     d: {uk: 'Відпустити болти лап двигуна й відсунути його, щоб пальці з втулками вийшли з напівмуфти двигуна.', en: 'Loosen the motor foot bolts and slide the motor back so the pins with bushings come out of the motor half.'}},
-    {t: {uk: 'Зняти зношені втулки', en: 'Remove the worn bushings'}, focus: ['coupling.bushings', 'coupling.pins'], set: {'coupling.bushings': [90, 0, 170]}, cam: 'coupling',
-     d: {uk: 'Зняти гумові втулки з пальців. Оглянути пальці: виробіток чи згин — міняти пальці комплектом.', en: 'Take the rubber bushings off the pins. Check the pins: wear or bending means a new set of pins.'}},
-    {t: {uk: 'Надіти нові', en: 'Fit new ones'}, focus: ['coupling.bushings'], set: {'coupling.bushings': [0, 0, 0]}, cam: 'coupling',
-     d: {uk: 'Надіти нові втулки — усі шість комплектом, не по одній. Гайки пальців затягнути й законтрити.', en: 'Fit new bushings — all six as a set, not one at a time. Tighten and lock the pin nuts.'}},
-    {t: {uk: 'Повернути двигун', en: 'Return the motor'}, focus: ['coupling.half_motor'], set: {'@motor': [0, 0, 0]}, cam: 'coupling', link: 'align',
-     d: {uk: 'Повернути двигун, ввести пальці в отвори напівмуфти двигуна (РЕ п. 4.3.6.24). Зазор між напівмуфтами — за паспортом муфти (у моделі 4 мм). Перевірити центрування.', en: 'Bring the motor back and guide the pins into the motor half (manual §4.3.6.24). Gap between the halves — per the coupling data (4 mm in the model). Check the alignment.'}},
-    {t: {uk: 'Огородження й пуск', en: 'Guard and start'}, focus: ['sensor.P_DE', 'sensor.M_DE'], set: {'coupling.guard': [0, 0, 0]}, cam: 'coupling', spin: true,
-     d: {uk: 'Поставити огородження, пустити агрегат і записати еталон у Flowbit.', en: 'Refit the guard, start the unit and save a baseline in Flowbit.'}}
+    P.safe, P.gBolts, P.gOff, P.mBolts,
+    step('Відсунути двигун', 'Slide the motor back',
+      'Відсунути двигун, поки пальці з втулками не вийдуть з напівмуфти двигуна.', 'Slide the motor back until the pins with bushings are clear of the motor half.',
+      {tools: ['bar'], acts: [BY('@motor', [150, 0, 0], {dur: 1.6})], cam: 'coupling'}),
+    step('Зняти зношені втулки', 'Take off the worn bushings',
+      'Зняти гумові втулки з пальців.', 'Take the rubber bushings off the pins.',
+      {acts: [BY('coupling.bushings', [45, 0, 0]), BY('coupling.bushings', [0, 0, 170], {hide: true})], cam: 'coupling'}),
+    step('Оглянути пальці', 'Check the pins',
+      'Виробіток, згин чи ослаблені гайки пальців — міняти пальці комплектом.', 'Worn, bent pins or loose pin nuts — replace the pins as a set.',
+      {tools: ['light'], focus: ['coupling.pins'], cam: 'coupling'}),
+    step('Надіти нові втулки', 'Fit new bushings',
+      'Надіти нові втулки — усі шість комплектом, не по одній.', 'Fit new bushings — all six as a set, not one at a time.',
+      {tools: ['newbush'], acts: [BY('coupling.bushings', [0, 0, -170]), TO('coupling.bushings', [0, 0, 0])], cam: 'coupling'}),
+    step('Повернути двигун', 'Bring the motor back',
+      'Повернути двигун і ввести пальці в отвори напівмуфти двигуна. Зазор між напівмуфтами — за паспортом муфти (у моделі 4 мм).', 'Bring the motor back and guide the pins into the motor half. Gap between the halves — per the coupling data (4 mm in the model).',
+      {tools: ['bar', 'feeler'], acts: [TO('@motor', [0, 0, 0], {dur: 1.6})], cam: 'coupling'}),
+    P.mbOn, P.align, P.gOn,
+    step('Пуск і еталон', 'Start and baseline', 'Пустити агрегат і записати еталон у Flowbit.', 'Start the unit and save a baseline in Flowbit.',
+      {tools: ['flowbit'], focus: ['sensor.P_DE', 'sensor.M_DE'], cam: 'coupling', spin: true})
   ]},
   {id: 'ring', t: {uk: 'Колесо і щілинне кільце', en: 'Impeller and wear ring'}, when: {uk: 'Напір упав понад 10 %, дисбаланс, кавітаційний шум.', en: 'Head down more than 10 %, unbalance, cavitation noise.'}, steps: [
-    SAFE, GUARD, ...PULL,
-    {t: {uk: 'Оглянути колесо', en: 'Inspect the impeller'}, focus: ['rotor.impeller'], cam: 'imp',
-     d: {uk: 'Раковини на вході лопатей і на вічку — кавітація; стерті кромки — абразив; тріщини чи відламані лопаті — колесо міняти. Відкладення — очистити.', en: 'Pitting at the vane inlets and the eye — cavitation; worn edges — abrasives; cracks or broken vanes — replace the impeller. Clean off deposits.'}},
-    {t: {uk: 'Перевірити щілинне кільце', en: 'Check the wear ring'}, focus: ['pump.wear_ring'], cam: 'pump', clip: true,
-     d: {uk: 'Виміряти зазор між шийкою вічка колеса й кільцем. Напір упав понад 10 % (граничний стан за РЕ) або на кільці задири — кільце міняти.', en: 'Measure the gap between the impeller eye neck and the ring. Head more than 10 % down (limit state per the manual) or a scored ring — replace the ring.'}},
-    {t: {uk: 'Замінити кільце', en: 'Replace the ring'}, focus: ['pump.wear_ring'], set: {'pump.wear_ring': [150, 0, 150]}, cam: 'pump', clip: true,
-     d: {uk: 'Випресувати старе кільце, запресувати нове рівно, без перекосу.', en: 'Press the old ring out and press the new one in square.'}},
-    {t: {uk: 'Балансування колеса', en: 'Balance the impeller'}, focus: ['rotor.impeller'], cam: 'imp',
-     d: {uk: 'Після наплавлення, підрізки чи заміни колесо балансують (типово клас G6.3).', en: 'After welding, trimming or replacement the impeller is balanced (typically grade G6.3).'}},
-    {t: {uk: 'Зібрати насос', en: 'Reassemble the pump'}, focus: ['rotor.impeller', 'pump.cover', 'pump.wear_ring'], set: {'*': 0, 'coupling.guard': [0, 0, 330], '@motor': [260, 0, 0]}, cam: 'pump', clip: true,
-     d: {uk: 'Зібрати у зворотному порядку. Зазор колесо — кришка 3 ± 0,5 мм; ротор провертається рукою вільно.', en: 'Reassemble in reverse order. Impeller-to-cover gap 3 ± 0.5 mm; the rotor turns freely by hand.'}},
-    {t: {uk: 'Центрування, пуск, еталон', en: 'Align, start, baseline'}, focus: ['sensor.P_NDE', 'sensor.P_DE'], set: {'*': 0}, cam: 'all', spin: true, link: 'align',
-     d: {uk: 'Відцентрувати, поставити огородження, пустити (2–3 с, потім 4–5 хв). Напір за манометром має повернутися до паспортного. Записати еталон у Flowbit.', en: 'Align, refit the guard, start (2–3 s, then 4–5 min). The gauge head must return to the rated value. Save a baseline in Flowbit.'}}
+    P.safe, P.drain, P.gBolts, P.gOff, P.mBolts, P.mAway, P.cpOff, P.fBolts, P.flBolts, P.jack, P.pull, P.nut, P.imp,
+    step('Оглянути колесо', 'Inspect the impeller',
+      'Раковини на вході лопатей і на вічку — кавітація; стерті кромки — абразив; тріщини чи відламані лопаті — колесо міняти. Відкладення — очистити.',
+      'Pitting at the vane inlets and the eye — cavitation; worn edges — abrasives; cracks or broken vanes — replace the impeller. Clean off deposits.',
+      {tools: ['light'], focus: ['rotor.impeller'], cam: 'imp'}),
+    step('Перевірити щілинне кільце', 'Check the wear ring',
+      'Виміряти зазор між шийкою вічка колеса й кільцем. Напір упав понад 10 % (граничний стан за РЕ) або на кільці задири — міняти.',
+      'Measure the gap between the impeller eye neck and the ring. Head more than 10 % down (limit state per the manual) or a scored ring — replace it.',
+      {tools: ['feeler', 'micro'], focus: ['pump.wear_ring'], cam: 'pump', clip: true}),
+    step('Випресувати старе кільце', 'Press out the old ring',
+      'Випресувати кільце з корпусу в бік відкритої камери.', 'Press the ring out of the casing towards the open chamber.',
+      {tools: ['puller', 'press'], acts: [BY('pump.wear_ring', [160, 0, 0]), BY('pump.wear_ring', [0, 0, 170], {hide: true})], cam: 'pump', clip: true}),
+    step('Запресувати нове кільце', 'Press in the new ring',
+      'Запресувати нове кільце рівно, без перекосу, до упору.', 'Press the new ring in square, right home.',
+      {tools: ['newring', 'press'], acts: [BY('pump.wear_ring', [0, 0, -170]), TO('pump.wear_ring', [0, 0, 0])], cam: 'pump', clip: true}),
+    step('Балансування колеса', 'Balance the impeller',
+      'Після наплавлення, підрізки чи заміни колесо балансують (типово клас G6.3).', 'After welding, trimming or replacement the impeller is balanced (typically grade G6.3).',
+      {tools: ['balance'], focus: ['rotor.impeller'], cam: 'imp'}),
+    P.impOn, P.nutOn, P.rotorIn, P.flOn, P.fOn, P.cpOn, P.mBack, P.mbOn, P.align, P.gOn, P.fill,
+    step('Пуск і перевірка напору', 'Start and check the head',
+      'Пробний пуск (2–3 с, потім 4–5 хв). Напір за манометром має повернутися до паспортного. Записати еталон у Flowbit.', 'Test run (2–3 s, then 4–5 min). The gauge head must return to the rated value. Save a baseline in Flowbit.',
+      {tools: ['flowbit'], focus: ['sensor.P_NDE', 'sensor.P_DE'], cam: 'all', spin: true})
   ]}
 ];
 const PROC = Object.fromEntries(PROCS.map(p => [p.id, p]));
+const procTools = p => [...new Set(p.steps.flatMap(s => s.tools || []))];
 
 // housings that the section view cuts (the rest stays whole so it shows inside)
-const CLIP = new Set(['pump.casing', 'pump.cover', 'pump.bracket', 'pump.cover_front', 'pump.cover_rear', 'coupling.guard', 'motor.frame', 'motor.shield_de', 'motor.shield_nde', 'motor.fan_cover', 'motor.stator', 'motor.winding', 'pump.bolts_flange', 'seal.gland', 'seal.packing', 'seal.studs', 'pump.wear_ring', 'seal.lips', 'pump.foot', 'motor.terminal_box']);
+const CLIP = new Set(['pump.casing', 'pump.cover', 'pump.bracket', 'pump.cover_front', 'pump.cover_rear', 'coupling.guard', 'motor.frame', 'motor.shield_de', 'motor.shield_nde', 'motor.fan_cover', 'motor.stator', 'motor.winding', 'pump.bolts_flange', 'seal.gland', 'seal.packing', 'seal.studs', 'seal.nuts', 'pump.wear_ring', 'seal.lips', 'pump.foot', 'motor.terminal_box']);
 
 // ===================================================================== state
 const S = {tab: 'parts', sel: null, explode: 0, clip: false, sensors: true, spin: false, view: 0,
-  focus: new Set(), hot: new Set(), ghost: false, moves: {}, fault: null, proc: null, step: 0, alert: new Set()};
+  focus: new Set(), hot: new Set(), ghost: false, fault: null, proc: null, step: 0, alert: new Set(), done: new Set(), active: new Set()};
 const PARTS = {};
 let ready = false;
 
@@ -731,9 +993,11 @@ const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(38, 1, 0.01, 60);
 let controls = null;
 const mm = (a, b, c) => new THREE.Vector3(a / 1000, c / 1000, -b / 1000);      // model mm -> three metres (Y up)
+const mmv = a => mm(a[0], a[1], a[2]);
 const dirv = d => new THREE.Vector3(d[0], d[2], -d[1]).normalize();
 const clipPlane = new THREE.Plane(new THREE.Vector3(0, 0, -1), 0);             // removes the half facing the default camera
 const ACC = new THREE.Color('#56c8ff'), HOT = new THREE.Color('#ff7a1a'), ALERT = new THREE.Color('#ff5555');
+const XAX = new THREE.Vector3(1, 0, 0), YAX = new THREE.Vector3(0, 1, 0), ZAX = new THREE.Vector3(0, 0, 1);
 
 if (renderer) {
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
@@ -748,7 +1012,6 @@ if (renderer) {
   scene.add(new THREE.HemisphereLight(0xcfe3ff, 0x0a1830, 0.45));
   const grid = new THREE.GridHelper(3.2, 32, 0x3a6fb8, 0x1d4277);
   grid.material.transparent = true; grid.material.opacity = 0.45; grid.position.set(0.58, 0, 0); scene.add(grid);
-  // soft contact shadow under the frame
   const cv = document.createElement('canvas'); cv.width = 256; cv.height = 128;
   const g = cv.getContext('2d'); const rg = g.createRadialGradient(128, 64, 8, 128, 64, 128);
   rg.addColorStop(0, 'rgba(0,0,0,.55)'); rg.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = rg; g.fillRect(0, 0, 256, 128);
@@ -761,6 +1024,17 @@ if (renderer) {
   setView(VIEWS.all, 0);
 } else {
   showFail(L().noWebgl);
+}
+
+// the spanner that appears on a bolt head while it turns (built at s = 1 mm, scaled to the wrench size)
+const wrench = new THREE.Group();
+{
+  const wm = new THREE.MeshStandardMaterial({color: 0xe3e8ec, metalness: 0.9, roughness: 0.3, emissive: new THREE.Color('#ffb547'), emissiveIntensity: 0.18});
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(0.78, 0.2, 10, 30), wm);
+  const handle = new THREE.Mesh(new THREE.BoxGeometry(8.6, 0.62, 0.26), wm); handle.position.x = 0.78 + 4.3;
+  const end = new THREE.Mesh(new THREE.TorusGeometry(0.6, 0.18, 8, 24), wm); end.position.x = 0.78 + 8.6 + 0.4;
+  wrench.add(ring, handle, end);
+  wrench.visible = false; scene.add(wrench);
 }
 
 function showFail(msg) {
@@ -776,7 +1050,7 @@ if (renderer) {
   loader.load('models/k80-50-200.glb', gltf => {
     initModel(gltf.scene);
     $('#loading').hidden = true; $('#poster').classList.add('gone');
-    ready = true; refresh(); renderTab();
+    ready = true; look(); updateToolbar(); renderTab();
   }, xhr => {
     // GitHub Pages serves the model gzipped, so loaded can exceed total — keep the counter below 100 %
     if (xhr.total) $('#pct').textContent = Math.min(99, Math.round(xhr.loaded / xhr.total * 100)) + '%';
@@ -785,18 +1059,16 @@ if (renderer) {
 
 function initModel(root) {
   scene.add(root);
-  // debugging handle: snap() jumps to the end of the current animation and draws one frame
-  window.__k80 = {scene, PARTS, S, camera, controls, renderer, snap() {
-    for (const p of Object.values(PARTS)) p.obj.position.copy(p.tgt);
-    if (tween) { controls.target.copy(tween.tT); camera.position.copy(tween.tP); tween = null; }
-    controls.update(); renderer.render(scene, camera); labels();
-  }};
   root.traverse(o => {
-    const pid = o.userData && o.userData.pid;
+    const u = o.userData || {}, pid = u.pid;
     if (!pid || PARTS[pid]) return;
-    const e = o.userData.explode || [0, 0, 0];
-    const p = PARTS[pid] = {pid, obj: o, base: o.position.clone(), ex: new THREE.Vector3(e[0], e[2], -e[1]), rot: !!o.userData.rotating,
-      meshes: [], tgt: o.position.clone()};
+    const e = u.explode || [0, 0, 0];
+    const p = PARTS[pid] = {pid, obj: o, base: o.position.clone(), ex: new THREE.Vector3(e[0], e[2], -e[1]), rot: !!u.rotating,
+      set: u.set || null, meshes: [], off: new THREE.Vector3(), ang: 0, hid: false, fx: null};
+    if (u.fastener) {
+      const a = u.axis;
+      p.fx = {axis: new THREE.Vector3(a[0], a[2], -a[1]).normalize(), wrench: u.wrench, travel: u.travel, headC: u.head_c};
+    }
     o.traverse(m => {
       if (!m.isMesh) return;
       m.material = m.material.clone();
@@ -805,33 +1077,49 @@ function initModel(root) {
       m.userData.pid = pid; p.meshes.push(m);
     });
   });
-  for (const p of Object.values(PARTS)) { p.box = new THREE.Box3().setFromObject(p.obj); p.center = p.box.getCenter(new THREE.Vector3()); }
+  for (const p of Object.values(PARTS)) {
+    p.box = new THREE.Box3().setFromObject(p.obj);
+    p.center = p.box.getCenter(new THREE.Vector3());
+    if (p.set) (SETS[p.set] = SETS[p.set] || []).push(p.pid);
+    if (p.rot) GROUPSETS['@shafts'].push(p.pid);
+  }
+  const num = s => +(s.split('.').pop()) || 0;
+  for (const k of Object.keys(SETS)) SETS[k].sort((a, b) => num(a) - num(b));
+  // debugging handle: snap() jumps to the end of the current animation and draws one frame
+  window.__k80 = {scene, PARTS, SETS, S, camera, controls, renderer, snap() {
+    if (TL) { for (const tr of TL.tracks) finishTrack(tr); TL = null; S.active = new Set(); S.wr = null; wrench.visible = false; look(); }
+    if (tween) { controls.target.copy(tween.tT); camera.position.copy(tween.tP); tween = null; }
+    exCur = S.explode; poseAll(); controls.update(); renderer.render(scene, camera); labels();
+  }, at(sec) {   // draw the current step as it looks `sec` seconds in
+    if (TL) TL.t0 = performance.now() - sec * 1000;
+    if (tween) { controls.target.copy(tween.tT); camera.position.copy(tween.tP); tween = null; }
+    S.wr = null; stepTimeline(performance.now()); exCur = S.explode; poseAll();
+    if (S.wr) placeWrench(S.wr); else wrench.visible = false;
+    controls.update(); renderer.render(scene, camera); labels();
+    return {running: !!TL, wrench: S.wr, active: [...S.active]};
+  }};
 }
 
 // ---------------------------------------------------------------- visual state
-function targets() {
-  for (const p of Object.values(PARTS)) {
-    const m = S.moves[p.pid];
-    p.tgt.copy(p.base).addScaledVector(p.ex, S.explode);
-    if (m) p.tgt.add(mm(m[0], m[1], m[2]));
-  }
-}
+const setOf = pid => (PARTS[pid] && PARTS[pid].set && SETS[PARTS[pid].set] && SETS[PARTS[pid].set].length > 1) ? PARTS[pid].set : pid;
 function look() {
-  const anyFocus = S.focus.size > 0;
+  if (!ready) return;
+  const anyFocus = S.focus.size > 0 || S.done.size > 0;
   for (const p of Object.values(PARTS)) {
     const sens = p.pid.startsWith('sensor.');
-    let vis = sens ? S.sensors : true;
+    let vis = !p.hid && (sens ? S.sensors : true);
     if (sens && S.clip && p.center.z > 0.02 && !S.focus.has(p.pid)) vis = false;
     p.obj.visible = vis;
-    const sel = S.focus.has(p.pid) || S.sel === p.pid, hot = S.hot.has(p.pid), al = S.alert.has(p.pid);
-    const ghost = !!S.ghost && anyFocus && !sel && !sens && !hot;
-    const mv = S.moves[p.pid], moved = !!mv && (mv[0] || mv[1] || mv[2]);
-    const clip = S.clip && CLIP.has(p.pid) && !moved;
+    const sel = S.focus.has(p.pid) || S.sel === p.pid, hot = S.hot.has(p.pid), al = S.alert.has(p.pid), done = S.done.has(p.pid);
+    const ghost = !!S.ghost && anyFocus && !sel && !(sens && !S.proc) && !hot && !done;
+    const moved = p.off.lengthSq() > 1e-10;
+    const clip = S.clip && (CLIP.has(p.pid) || CLIP.has(p.set)) && !moved;
     for (const m of p.meshes) {
       const mt = m.material, b = mt.userData.b;
       if (hot) { mt.emissive.copy(HOT); mt.emissiveIntensity = 0.9; }
       else if (al) { mt.emissive.copy(ALERT); mt.emissiveIntensity = 0.6; }
       else if (sel) { mt.emissive.copy(ACC); mt.emissiveIntensity = 0.42; }
+      else if (done) { mt.emissive.copy(ACC); mt.emissiveIntensity = 0.22; }
       else { mt.emissive.copy(b.e); mt.emissiveIntensity = b.ei; }
       const tr = ghost || b.t;
       const side = clip ? THREE.DoubleSide : THREE.FrontSide;
@@ -841,26 +1129,174 @@ function look() {
     }
   }
 }
-function refresh() { if (!ready) return; targets(); look(); updateToolbar(); }
+function refresh() { if (!ready) return; look(); updateToolbar(); }
+
+// ---------------------------------------------------------------- poses: position = base + explode + offset, rotation about the own axis
+let exCur = 0, spinAng = 0;
+const qa = new THREE.Quaternion(), qb = new THREE.Quaternion();
+function poseAll() {
+  for (const p of Object.values(PARTS)) {
+    p.obj.position.copy(p.base).addScaledVector(p.ex, exCur).add(p.off);
+    if (p.fx) {
+      p.obj.quaternion.setFromAxisAngle(p.fx.axis, p.ang);
+      if (p.rot && spinAng) { qb.setFromAxisAngle(XAX, -spinAng); p.obj.quaternion.multiply(qb); }
+    } else if (p.rot) {
+      p.obj.quaternion.setFromAxisAngle(XAX, p.ang - spinAng);
+    }
+  }
+}
+function resetPoses() {
+  for (const p of Object.values(PARTS)) { p.off.set(0, 0, 0); p.ang = 0; p.hid = false; }
+  S.hot = new Set();
+}
+
+// ---------------------------------------------------------------- action player
+let TL = null;
+const easeIO = t => t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+// Build the tracks of one step from the current poses; instant = apply the end state at once.
+function runActs(acts, instant) {
+  const sim = {};
+  const get = pid => sim[pid] || (sim[pid] = {off: PARTS[pid].off.clone(), ang: PARTS[pid].ang, hid: PARTS[pid].hid});
+  const tracks = [], touched = new Set();
+  let t = 0, prevStart = 0;
+  for (const a of acts || []) {
+    const start = a.with ? prevStart : t; prevStart = start;
+    let end = start;
+    if (a.wait) end = start + a.wait;
+    if (a.hot || a.cool) { tracks.push({flag: a.hot ? 'hot' : 'cool', pids: ids(a.hot || a.cool), start, dur: .01}); end = start + .3; }
+    if (a.u || a.s) {
+      let list = ids(a.u || a.s).filter(pid => PARTS[pid] && PARTS[pid].fx);
+      if (a.order) list = a.order.map(n => list[n - 1]).filter(Boolean);
+      let tt = start;
+      for (const pid of list) {
+        const p = PARTS[pid], g = get(pid), fx = p.fx;
+        const travel = a.travel ?? fx.travel, dist = (travel + 4) / 1000;
+        const turns = Math.max(2, Math.min(6, travel / 5));
+        const dur = Math.max(.75, Math.min(1.35, .5 + travel * .022));
+        if (a.u) {
+          if (g.hid) continue;
+          const off1 = g.off.clone().addScaledVector(fx.axis, dist), ang1 = g.ang + turns * Math.PI * 2;
+          tracks.push({pid, start: tt, dur, off0: g.off.clone(), off1, ang0: g.ang, ang1, wrench: true});
+          g.off.copy(off1); g.ang = ang1;
+          let e = tt + dur;
+          if (a.tray) { const o2 = off1.clone().add(mmv(a.tray)); tracks.push({pid, start: e, dur: .45, off0: off1.clone(), off1: o2, ang0: ang1, ang1}); g.off.copy(o2); e += .45; }
+          if (a.hide) { tracks.push({pid, start: e, dur: .3, off0: g.off.clone(), off1: g.off.clone(), ang0: g.ang, ang1: g.ang, hideEnd: true}); g.hid = true; e += .3; }
+          end = Math.max(end, e);
+        } else {
+          const seat = a.at ? mmv(a.at) : new THREE.Vector3();
+          let off0 = g.off.clone(), ang0 = g.ang;
+          const show = g.hid;
+          if (g.hid) { off0 = seat.clone().addScaledVector(fx.axis, dist); ang0 = turns * Math.PI * 2; }
+          tracks.push({pid, start: tt, dur, off0, off1: seat.clone(), ang0, ang1: 0, wrench: true, show});
+          g.off.copy(seat); g.ang = 0; g.hid = false;
+          end = Math.max(end, tt + dur);
+        }
+        touched.add(pid);
+        tt += dur * .85;
+      }
+    }
+    if (a.m) {
+      const dur = a.dur || 1.1;
+      for (const pid of ids(a.m)) {
+        if (!PARTS[pid]) continue;
+        const g = get(pid);
+        const off1 = a.to ? mmv(a.to) : g.off.clone().add(mmv(a.by));
+        tracks.push({pid, start, dur, off0: g.off.clone(), off1, ang0: g.ang, ang1: g.ang, show: g.hid});
+        g.off.copy(off1); g.hid = false; touched.add(pid);
+        if (a.hide) {      // put the part aside: it disappears once it has moved away
+          tracks.push({pid, start: start + dur, dur: .3, off0: off1.clone(), off1: off1.clone(), ang0: g.ang, ang1: g.ang, hideEnd: true});
+          g.hid = true;
+        }
+      }
+      end = Math.max(end, start + dur + (a.hide ? .3 : 0));
+    }
+    if (a.r) {
+      const dur = a.dur || 3;
+      for (const pid of ids(a.r)) {
+        if (!PARTS[pid]) continue;
+        const g = get(pid), p = PARTS[pid];
+        const sgn = p.fx ? (Math.sign(p.fx.axis.dot(XAX)) || 1) : 1;
+        const ang1 = g.ang - sgn * (a.turns || 1) * Math.PI * 2;
+        tracks.push({pid, start, dur, off0: g.off.clone(), off1: g.off.clone(), ang0: g.ang, ang1, lin: true});
+        g.ang = ang1; touched.add(pid);
+      }
+      end = Math.max(end, start + dur);
+    }
+    t = Math.max(t, end);
+  }
+  if (instant) { for (const tr of tracks) finishTrack(tr); return {tracks: [], end: 0, touched, sim}; }
+  return {tracks, end: t, touched, sim};
+}
+function finishTrack(tr) {
+  if (tr.flag) { for (const pid of tr.pids) { if (tr.flag === 'hot') S.hot.add(pid); else S.hot.delete(pid); } return; }
+  const p = PARTS[tr.pid]; p.off.copy(tr.off1); p.ang = tr.ang1;
+  if (tr.show) p.hid = false;
+  if (tr.hideEnd) p.hid = true;
+}
+function playTimeline(res) {
+  TL = res.tracks.length ? {t0: performance.now(), tracks: res.tracks, done: new Set()} : null;
+}
+const tmpW = new THREE.Vector3();
+function placeWrench(pid) {
+  const p = PARTS[pid], fx = p.fx, ax = fx.axis;
+  wrench.scale.setScalar(fx.wrench / 1000);
+  p.obj.getWorldPosition(tmpW);
+  wrench.position.copy(tmpW).addScaledVector(ax, fx.headC / 1000);
+  qa.setFromUnitVectors(ZAX, ax);
+  const v0 = XAX.clone().applyQuaternion(qa);
+  let d = YAX.clone().addScaledVector(ax, -ax.dot(YAX));
+  if (d.lengthSq() < 1e-3) d = ZAX.clone().addScaledVector(ax, -ax.dot(ZAX));
+  d.normalize();
+  const phase = Math.atan2(v0.clone().cross(d).dot(ax), v0.dot(d));
+  qb.setFromAxisAngle(ax, phase + p.ang);
+  wrench.quaternion.copy(qb).multiply(qa);
+  wrench.visible = true;
+}
+function stepTimeline(now) {
+  if (!TL) return;
+  const tl = (now - TL.t0) / 1000;
+  const active = new Set(); let wr = null, dirty = false;
+  TL.tracks.forEach((tr, i) => {
+    if (TL.done.has(i) || tl < tr.start) return;
+    if (tr.flag || tl >= tr.start + tr.dur) {
+      finishTrack(tr); TL.done.add(i);
+      if (tr.flag || tr.hideEnd || tr.show) dirty = true;
+      return;
+    }
+    const p = PARTS[tr.pid], k = (tl - tr.start) / tr.dur;
+    if (tr.show && p.hid) { p.hid = false; dirty = true; }
+    const e = tr.lin ? k : easeIO(k);
+    p.off.lerpVectors(tr.off0, tr.off1, e);
+    p.ang = tr.ang0 + (tr.ang1 - tr.ang0) * (tr.wrench ? k : e);
+    active.add(tr.pid);
+    if (tr.wrench) wr = tr.pid;
+  });
+  if (TL.done.size === TL.tracks.length) { TL = null; dirty = true; }
+  const left = [...S.active].some(pid => !active.has(pid));
+  S.active = active; S.wr = wr;
+  if (dirty || left) look();
+  for (const pid of active) {
+    const s = 0.32 + 0.22 * Math.sin(now * 0.009);
+    for (const m of PARTS[pid].meshes) { m.material.emissive.copy(ACC); m.material.emissiveIntensity = s; }
+  }
+}
 
 // ---------------------------------------------------------------- camera
 let tween = null;
+function narrow() { return stage.clientWidth < stage.clientHeight * 1.05; }
 function setView(v, ms = 900) {
   const t = mm(v.t[0], v.t[1], v.t[2]);
-  const r = v.r * (stage.clientWidth < stage.clientHeight * 1.05 ? 1.5 : 1);
+  const r = v.r * (narrow() ? 1.5 : 1);
   const pos = t.clone().addScaledVector(dirv(v.d), r);
   if (!controls) return;
   if (!ms) { controls.target.copy(t); camera.position.copy(pos); controls.update(); return; }
   tween = {t0: performance.now(), ms, fT: controls.target.clone(), tT: t, fP: camera.position.clone(), tP: pos};
 }
-// frame a set of parts at their target positions, looking from the preset direction d
-function fitParts(pids, d, pad = 1.15) {
+// frame boxes of parts given as [pid, offset] pairs, looking from direction d
+function fitBoxes(entries, d, pad = 1.3) {
   if (!controls) return;
   const box = new THREE.Box3();
-  for (const pid of pids) {
-    const p = PARTS[pid]; if (!p) continue;
-    box.union(p.box.clone().translate(p.tgt.clone().sub(p.base)));
-  }
+  for (const [pid, off] of entries) { const p = PARTS[pid]; if (p) box.union(p.box.clone().translate(off)); }
   if (box.isEmpty()) return;
   const c = box.getCenter(new THREE.Vector3());
   const rad = Math.max(0.2, box.getBoundingSphere(new THREE.Sphere()).radius * pad);
@@ -868,12 +1304,15 @@ function fitParts(pids, d, pad = 1.15) {
   const dist = rad / Math.sin(Math.min(vf, hf));
   tween = {t0: performance.now(), ms: 900, fT: controls.target.clone(), tT: c, fP: camera.position.clone(), tP: c.clone().addScaledVector(dirv(d), dist)};
 }
+function fitParts(pids, d, pad = 1.3) { fitBoxes(pids.filter(pid => PARTS[pid]).map(pid => [pid, PARTS[pid].off]), d, pad); }
 function focusPart(pid) {
-  const p = PARTS[pid]; if (!p || !controls) return;
-  const box = new THREE.Box3().setFromObject(p.obj); const c = box.getCenter(new THREE.Vector3());
+  const list = ids(pid).filter(x => PARTS[x]);
+  if (!list.length || !controls) return;
+  const box = new THREE.Box3(); for (const x of list) box.union(new THREE.Box3().setFromObject(PARTS[x].obj));
+  const c = box.getCenter(new THREE.Vector3());
   const size = box.getSize(new THREE.Vector3()).length();
   const dir = camera.position.clone().sub(controls.target).normalize();
-  const r = Math.max(0.42, size * 2.1) * (stage.clientWidth < stage.clientHeight * 1.05 ? 1.4 : 1);
+  const r = Math.max(0.42, size * 2.1) * (narrow() ? 1.4 : 1);
   tween = {t0: performance.now(), ms: 800, fT: controls.target.clone(), tT: c, fP: camera.position.clone(), tP: c.clone().addScaledVector(dir, r)};
 }
 
@@ -898,11 +1337,12 @@ function frame(now) {
     if (t >= 1) tween = null;
   }
   if (ready) {
-    const k = reduce ? 1 : 1 - Math.exp(-dt * 6);
-    for (const p of Object.values(PARTS)) {
-      p.obj.position.lerp(p.tgt, k);
-      if (S.spin && p.rot) p.obj.rotation.x -= dt * 4.2;     // clockwise seen from the motor
-    }
+    exCur += (S.explode - exCur) * (reduce ? 1 : 1 - Math.exp(-dt * 6));
+    if (S.spin) spinAng += dt * 4.2;
+    S.wr = null;
+    stepTimeline(now);
+    poseAll();
+    if (S.wr) placeWrench(S.wr); else wrench.visible = false;
   }
   controls.update();
   renderer.render(scene, camera);
@@ -943,8 +1383,8 @@ function pickAt(x, y) {
   const list = [];
   for (const p of Object.values(PARTS)) if (p.obj.visible) for (const m of p.meshes) if (!(m.material.transparent && m.material.opacity < .5)) list.push(m);
   for (const h of ray.intersectObjects(list, false)) {
-    const pid = h.object.userData.pid;
-    if (S.clip && CLIP.has(pid) && clipPlane.distanceToPoint(h.point) < 0) continue;
+    const pid = h.object.userData.pid, p = PARTS[pid];
+    if (S.clip && (CLIP.has(pid) || CLIP.has(p.set)) && p.off.lengthSq() < 1e-10 && clipPlane.distanceToPoint(h.point) < 0) continue;
     return pid;
   }
   return null;
@@ -955,7 +1395,7 @@ canvas.addEventListener('pointerup', e => {
   if (!down || !ready) return;
   if (Math.hypot(e.clientX - down.x, e.clientY - down.y) < 6) {
     const pid = pickAt(e.clientX, e.clientY);
-    if (pid) { if (pid.startsWith('sensor.')) { setTab('sensors'); selectSensor(pid.slice(7)); } else { setTab('parts'); selectPart(pid, false); } }
+    if (pid) { if (pid.startsWith('sensor.')) { setTab('sensors'); selectSensor(pid.slice(7)); } else if (!S.proc) { setTab('parts'); selectPart(setOf(pid), false); } }
   }
   down = null;
 });
@@ -975,11 +1415,10 @@ canvas.addEventListener('pointermove', e => {
 canvas.addEventListener('pointerleave', () => { tip.style.display = 'none'; });
 
 // ===================================================================== names
-const NAMES = {};
-function partName(pid) {
-  const p = PARTS[pid];
-  if (p) return LANG === 'en' ? (p.obj.userData.en || pid) : (p.obj.userData.uk || pid);
-  return NAMES[pid] ? T(NAMES[pid]) : pid;
+function partName(k) {
+  const p = PARTS[k];
+  if (p) return LANG === 'en' ? (p.obj.userData.en || k) : (p.obj.userData.uk || k);
+  return SETNAMES[k] ? T(SETNAMES[k]) : k;
 }
 const sensorName = id => { const s = SENSORS.find(x => x.id === id); return s ? `${id.replace('_', '-')} · ${T(s)}` : id; };
 
@@ -1033,7 +1472,7 @@ function renderParts() {
 function selectPart(pid, fly = true) {
   if (S.proc) exitProc(false);
   if (S.fault) closeFault();
-  S.sel = pid; S.focus = new Set([pid]); S.ghost = false; S.alert = new Set();
+  S.sel = pid; S.focus = new Set(ids(pid)); S.ghost = false; S.alert = new Set(); S.done = new Set();
   refresh(); renderParts();
   if (fly) focusPart(pid);
 }
@@ -1052,7 +1491,7 @@ function selectSensor(id) {
   if (S.proc) exitProc(false);
   if (S.fault) closeFault();
   const pid = 'sensor.' + id;
-  S.sensors = true; S.sel = pid; S.focus = new Set([pid]); S.ghost = false; S.alert = new Set();
+  S.sensors = true; S.sel = pid; S.focus = new Set([pid]); S.ghost = false; S.alert = new Set(); S.done = new Set();
   refresh(); renderSensors(); focusPart(pid);
 }
 
@@ -1064,7 +1503,7 @@ function spectrum(f) {
   s += `<rect x="${X(2)}" y="${y1 - 6}" width="${X(160) - X(2)}" height="${y0 - y1 + 6}" fill="rgba(86,200,255,.07)"/>`;
   s += `<text x="${X(2) + 4}" y="${y1 + 2}" font-size="9" fill="#56c8ff">${esc(L().band)} 2–160 ${esc(L().hz)}</text>`;
   if (f.noise) {
-    let pts = [];
+    const pts = [];
     for (let i = 0; i <= 120; i++) {
       const hz = i / 120 * FM, j = (Math.sin(i * 12.9898) * 43758.5453) % 1, rnd = Math.abs(j);
       let a = 0.03 + rnd * 0.03;
@@ -1110,17 +1549,20 @@ function renderFaults() {
 function openFault(id) {
   const f = FAULTS.find(x => x.id === id); if (!f) return;
   if (S.proc) exitProc(false);
-  S.fault = id; S.sel = null; S.explode = 0; S.moves = {};
-  S.focus = new Set(f.parts); S.alert = new Set(f.sens.map(s => 'sensor.' + s)); S.hot = new Set();
+  S.fault = id; S.sel = null; S.explode = 0; S.done = new Set();
+  S.focus = new Set(ids(f.parts)); S.alert = new Set(f.sens.map(s => 'sensor.' + s)); S.hot = new Set();
   S.ghost = f.clip ? false : 0.35; S.clip = !!f.clip; S.sensors = true; S.spin = false;
   $('#explode').value = 0;
   refresh();
   const v = VIEWS[f.cam] || VIEWS.all;
-  if (f.cam === 'all') setView(v); else fitParts([...f.parts, ...S.alert], v.d, 1.35);
+  if (f.cam === 'all') setView(v); else fitParts([...S.focus, ...S.alert], v.d, 1.35);
 }
 function closeFault() { S.fault = null; S.focus = new Set(); S.alert = new Set(); S.clip = false; S.ghost = false; refresh(); }
 
 // ---------------------------------------------------------------- procedures
+const toolChips = list => (list && list.length)
+  ? `<div class="tools">${list.map(k => `<span class="tool">${WRENCH}${esc(T(TOOLS[k] || {uk: k, en: k}))}</span>`).join('')}</div>`
+  : `<span class="small">${esc(L().none2)}</span>`;
 function renderProc() {
   const el = $('#tab-proc');
   if (!S.proc) {
@@ -1129,48 +1571,57 @@ function renderProc() {
     return;
   }
   const p = PROC[S.proc], st = p.steps[S.step], n = p.steps.length;
+  const ord = st.order && st.acts ? st.acts.find(a => a.order) : null;
   el.innerHTML = `<div class="card sel">
     <span class="small mono">${esc(T(p.t))}</span>
+    <details class="prep"><summary>${esc(L().prep)} (${procTools(p).length})</summary>${toolChips(procTools(p))}</details>
     <div class="dots">${p.steps.map((_, i) => `<button type="button" data-step="${i}" class="${i < S.step ? 'done' : ''}" ${i === S.step ? 'aria-current="step"' : ''} aria-label="${esc(L().step)} ${i + 1}">${i + 1}</button>`).join('')}</div>
     <h3>${esc(L().step)} ${S.step + 1} ${esc(L().of)} ${n}. ${esc(T(st.t))}</h3>
     <p class="step-d">${esc(T(st.d))}</p>
-    ${expand(st.focus).length ? `<div class="plist2">${expand(st.focus).filter(pid => !pid.startsWith('sensor.') || true).slice(0, 8).map(pid => `<button type="button" class="pbtn" data-fly="${pid}">${esc(partName(pid))}</button>`).join('')}</div>` : ''}
+    ${ord ? `<p class="small">${esc(L().order)}: ${ord.order.join(' → ')}</p>` : ''}
+    <div class="tools-h">${esc(L().tools)}</div>${toolChips(st.tools)}
     ${st.link ? `<div class="warnbox">${esc(L().related)}: <a href="#viewer" data-proc="${st.link}">${esc(T(PROC[st.link].t))}</a></div>` : ''}
     <div class="navrow">
       <button type="button" class="btn" data-nav="prev" ${S.step === 0 ? 'disabled' : ''}>← ${esc(L().prev)}</button>
+      <button type="button" class="btn" data-nav="replay">↻ ${esc(L().replay)}</button>
       <button type="button" class="btn btn-p" data-nav="next">${S.step === n - 1 ? esc(L().done) : esc(L().next) + ' →'}</button>
       <button type="button" class="btn" data-nav="exit">${esc(L().exit)}</button>
     </div></div>`;
 }
-function stateFor(p, i) {
-  const moves = {};
-  for (let k = 0; k <= i; k++) {
-    const set = p.steps[k].set || {};
-    if ('*' in set) for (const key of Object.keys(moves)) delete moves[key];
-    for (const [key, v] of Object.entries(set)) { if (key === '*') continue; for (const pid of expand([key])) moves[pid] = v; }
-  }
-  return moves;
-}
-function startProc(id, step = 0) {
+function startProc(id, k = 0) {
   if (S.fault) closeFault();
-  S.proc = id; S.step = step; setTab('proc'); applyStep();
+  S.proc = id; S.step = k; S.explode = 0; $('#explode').value = 0; setTab('proc'); applyStep();
 }
 function applyStep() {
   const p = PROC[S.proc], st = p.steps[S.step];
-  S.moves = stateFor(p, S.step); S.explode = 0; $('#explode').value = 0;
-  S.focus = new Set(expand(st.focus)); S.hot = new Set(expand(st.hot)); S.alert = new Set();
-  S.clip = !!st.clip; S.spin = !!st.spin && !reduce; S.ghost = st.clip ? false : 0.3; S.sel = null;
-  refresh(); renderProc(); stepbar();
+  TL = null; wrench.visible = false; S.active = new Set();
+  resetPoses();
+  for (let k = 0; k < S.step; k++) runActs(p.steps[k].acts, true);
+  S.focus = new Set(ids(st.focus)); S.alert = new Set(); S.sel = null;
+  S.clip = !!st.clip; S.spin = !!st.spin && !reduce; S.ghost = st.ghost ? 0.3 : false;
+  const res = runActs(st.acts, false);
+  S.done = res.touched;
+  look(); renderProc(); stepbar(); updateToolbar();
+  // camera: the parts this step moves (where they start and where they end) plus the ones to look at
   const v = VIEWS[st.cam] || VIEWS.all;
-  if (st.cam === 'all' || !S.focus.size) setView(v); else fitParts([...S.focus, ...S.hot], v.d, 1.25);
+  const entries = [];
+  for (const pid of new Set([...res.touched, ...S.focus])) {
+    const q = PARTS[pid]; if (!q) continue;
+    if (!q.hid) entries.push([pid, q.off.clone()]);
+    const e = res.sim[pid]; if (e && !e.hid) entries.push([pid, e.off.clone()]);
+    if (e && q.hid && !e.hid) entries.push([pid, e.off.clone()]);
+  }
+  if (st.cam === 'all' || !entries.length) setView(v); else fitBoxes(entries, v.d, 1.3);
+  playTimeline(res);
 }
 function stepbar() {
   const sb = $('#stepbar');
   if (!S.proc) { sb.hidden = true; return; }
-  const p = PROC[S.proc];
+  const p = PROC[S.proc], st = p.steps[S.step];
   sb.hidden = false;
   $('#sbN').textContent = `${T(p.t)} · ${S.step + 1}/${p.steps.length}`;
-  $('#sbT').textContent = T(p.steps[S.step].t);
+  $('#sbT').textContent = T(st.t);
+  $('#sbTool').innerHTML = st.tools && st.tools.length ? WRENCH + esc(st.tools.map(k => T(TOOLS[k])).join(' · ')) : '';
   $('#sbPrev').disabled = S.step === 0;
 }
 function go(d) {
@@ -1178,26 +1629,39 @@ function go(d) {
   if (d > 0 && S.step === p.steps.length - 1) { exitProc(true); return; }
   S.step = Math.max(0, Math.min(p.steps.length - 1, S.step + d)); applyStep();
 }
+// animate everything back to its assembled place
+function homeTimeline(dur = 1.2) {
+  const tracks = [];
+  for (const p of Object.values(PARTS)) {
+    if (p.off.lengthSq() > 1e-10 || p.hid || (p.fx && p.ang)) tracks.push({pid: p.pid, start: 0, dur, off0: p.off.clone(), off1: new THREE.Vector3(), ang0: p.ang, ang1: 0, show: p.hid});
+  }
+  S.hot = new Set();
+  playTimeline({tracks});
+}
 function exitProc(render = true) {
-  S.proc = null; S.step = 0; S.moves = {}; S.focus = new Set(); S.hot = new Set(); S.clip = false; S.spin = false; S.ghost = false;
+  if (TL) { for (const tr of TL.tracks) finishTrack(tr); TL = null; }
+  wrench.visible = false;
+  S.proc = null; S.step = 0; S.focus = new Set(); S.hot = new Set(); S.done = new Set(); S.active = new Set();
+  S.clip = false; S.spin = false; S.ghost = false;
+  homeTimeline();
   refresh(); stepbar(); if (render) { renderProc(); setView(VIEWS.all); }
 }
 $('#sbPrev').addEventListener('click', () => go(-1));
 $('#sbNext').addEventListener('click', () => go(1));
+$('#sbReplay').addEventListener('click', () => { if (S.proc) applyStep(); });
 $('#sbExit').addEventListener('click', () => exitProc(true));
 
 // ---------------------------------------------------------------- delegated clicks in the side panel
 $('.side').addEventListener('click', e => {
-  const b = e.target.closest('[data-part],[data-sens],[data-proc],[data-focus],[data-step],[data-nav],[data-fly],[data-sensor]');
+  const b = e.target.closest('[data-part],[data-sens],[data-proc],[data-focus],[data-step],[data-nav],[data-sensor]');
   if (!b) return;
   if (b.dataset.part) { setTab('parts'); selectPart(b.dataset.part); window.innerWidth < 980 && stage.scrollIntoView({behavior: reduce ? 'auto' : 'smooth', block: 'start'}); }
   else if (b.dataset.sens) { setTab('sensors'); selectSensor(b.dataset.sens); }
   else if (b.dataset.sensor) { selectSensor(b.dataset.sensor); }
   else if (b.dataset.proc) { e.preventDefault(); startProc(b.dataset.proc); }
   else if (b.dataset.focus) focusPart(b.dataset.focus);
-  else if (b.dataset.fly) focusPart(b.dataset.fly);
   else if (b.dataset.step) { S.step = +b.dataset.step; applyStep(); }
-  else if (b.dataset.nav) ({prev: () => go(-1), next: () => go(1), exit: () => exitProc(true)})[b.dataset.nav]();
+  else if (b.dataset.nav) ({prev: () => go(-1), next: () => go(1), replay: () => applyStep(), exit: () => exitProc(true)})[b.dataset.nav]();
 });
 $('.side').addEventListener('keydown', e => {
   const c = e.target.closest('[data-sensor]');
@@ -1222,8 +1686,8 @@ $('#bView').addEventListener('click', () => { S.view = (S.view + 1) % VIEW_CYCLE
 $('#bReset').addEventListener('click', () => {
   if (S.proc) exitProc(false);
   if (S.fault) { S.fault = null; $$('details.fault').forEach(x => { x.open = false; }); }
-  Object.assign(S, {sel: null, explode: 0, clip: false, spin: false, view: 0, focus: new Set(), hot: new Set(), alert: new Set(), moves: {}, sensors: true});
-  ex.value = 0; refresh(); renderTab(); setView(VIEWS.all);
+  Object.assign(S, {sel: null, explode: 0, clip: false, spin: false, view: 0, focus: new Set(), hot: new Set(), alert: new Set(), done: new Set(), sensors: true, ghost: false});
+  ex.value = 0; homeTimeline(); refresh(); renderTab(); setView(VIEWS.all);
 });
 function updateToolbar() {
   $('#bClip').setAttribute('aria-pressed', String(S.clip));
